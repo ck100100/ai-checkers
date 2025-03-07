@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from BoardState import BoardState
 from Pawn import Pawn
-from ..utils.constants import Coordinates
+from ..utils.types import Coordinates
 
 class Bot(ABC):
     """
