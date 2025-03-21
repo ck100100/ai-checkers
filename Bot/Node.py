@@ -1,4 +1,4 @@
-from Pawn import Pawn
+from .pawn import Pawn
 # I know we  have a constants file. i will fix it later
 BOARD_SIZE = 8
 RED = 0

@@ -1,5 +1,5 @@
-from ..utils.types import PawnType, Coordinates
-from ..utils.constants import BOARD_HEIGHT
+from utils.types import PawnType, Coordinates
+from utils.constants import BOARD_HEIGHT
 
 class Pawn:
     # i have my version of __init__ on line 36
