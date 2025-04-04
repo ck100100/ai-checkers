@@ -3,11 +3,11 @@
 # also showcases the replay viewer
 
 
-
-
 import random
 from Bot.replay_viewer import ReplayHandler
-from Bot.Node import Pawn, Node
+from Bot.BoardNode import BoardNode
+from Bot.BoardState import BoardState
+from Bot.Pawn import Pawn
 
 # looks like a Node class method. could be moved there
 def initialize_starting_positions():
@@ -29,8 +29,8 @@ def test_backward_jump():
 # move_for indicates wether it is a move for white or red. could be implemented better (odd moves are white, even are red) but my brain is fried rn
 def play_random_game(node, move_for=0):
     moves_made = [node]
-    while not node.kingExists(node):
-        children = node.findPossibleMoves(node, move_for)
+    while not node.kingExists():
+        children = node.findPossibleMoves(move_for)
         if not children:
             break
         node = random.choice(children)
@@ -38,14 +38,17 @@ def play_random_game(node, move_for=0):
         move_for = 1 - move_for
     return node, moves_made
 
-#bbasic main that initializes everything and plays a random game
+# basic main that initializes everything and plays a random game
 def main():
     # Initialize starting positions
     print("i exist")
     starting_red_pieces, starting_white_pieces = initialize_starting_positions()
 
+    # Create the initial BoardState
+    initial_board_state = BoardState(starting_red_pieces, starting_white_pieces)
+
     # Create the root node
-    root_node = Node(starting_red_pieces, starting_white_pieces)
+    root_node = BoardNode(initial_board_state)
 
     # Play a random game
     final_node, moves_made = play_random_game(root_node)

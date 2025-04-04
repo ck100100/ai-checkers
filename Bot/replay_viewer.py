@@ -8,8 +8,8 @@
 
 
 import pygame
-#from .variables import *
-from .Node import *
+# from .BoardNode import BoardNode
+# from .BoardState import BoardState
 
 pygame.init()
 
@@ -31,7 +31,7 @@ SQUARE_SIZE = WIDTH // COLUMNS
 FPS = 24
 #end of constants
 
-WINDOW = pygame.display.set_mode((WIDTH_OF_SCREEN, HEIGHT)) #WIDTH_OF_SCREEN has extra space for stats
+WINDOW = pygame.display.set_mode((WIDTH_OF_SCREEN, HEIGHT))  # WIDTH_OF_SCREEN has extra space for stats
 pygame.display.set_caption('Checkers')
 
 FONT = pygame.font.SysFont('arial', 15)
@@ -43,8 +43,8 @@ class ReplayHandler:
         self.window = WINDOW
 
         self.replay_active = True
-        #self.start_replay()
-    
+        # self.start_replay()
+
     def test_board(self):
         self.window.fill(black)
         self.draw_squares()
@@ -61,14 +61,15 @@ class ReplayHandler:
         for row in range(ROWS):
             for col in range(COLUMNS):
                 if (row + col) % 2 == 1:
-                    pygame.draw.rect(self.window, red, (col * SQUARE_SIZE, row * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE))    
+                    pygame.draw.rect(self.window, red, (col * SQUARE_SIZE, row * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE))
                     print(f"Drew red square at ({row}, {col})")  # Debugging
 
     def draw_pieces(self):
         if not self.replay_data:
             return  # Exit if no data
 
-        current_state = self.replay_data[self.current_move]
+        current_node = self.replay_data[self.current_move]
+        current_state = current_node.board_state
 
         # Draw red pieces
         for piece in current_state.red_pieces:
@@ -93,12 +94,14 @@ class ReplayHandler:
     def update(self):
         self.draw_board()
         pygame.display.update()
-    
+
     def display_text(self):
         if not self.replay_data:
             return
 
-        current_state = self.replay_data[self.current_move]
+        current_node = self.replay_data[self.current_move]
+        current_state = current_node.board_state
+
         texts = [
             f"RED's Pieces: {len(current_state.red_pieces)}",
             f"WHITE's Pieces: {len(current_state.white_pieces)}",
@@ -110,7 +113,6 @@ class ReplayHandler:
         for i, text in enumerate(texts):
             text_surface = FONT.render(text, True, white)
             self.window.blit(text_surface, (WIDTH + 10, 10 + i * 30))
-
 
     def start_replay(self):
         clock = pygame.time.Clock()
@@ -138,7 +140,7 @@ class ReplayHandler:
         print(f"Window: {self.window}")  # Debug: Check if self.window is valid
 
         self.window.fill(black)
-        pygame.draw.rect(self.window, red , (0, 0, 50, 50)) # (255, 0, 0) is red
+        pygame.draw.rect(self.window, red, (0, 0, 50, 50))  # (255, 0, 0) is red
         pygame.display.update()
 
         running = True
@@ -148,4 +150,3 @@ class ReplayHandler:
                     running = False
 
         pygame.quit()
-
