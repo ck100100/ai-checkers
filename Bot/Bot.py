@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 import sys
-from BoardState import BoardState
-from Pawn import Pawn
-from ..utils.types import Coordinates
-from BoardNode import BoardNode
+from .BoardState import BoardState
+from .Pawn import Pawn
+from utils.types import Coordinates
+from .BoardNode import BoardNode
 
 INF:int = sys.maxsize
 
@@ -63,12 +63,14 @@ class BotMinMaxAB(Bot):
         if(self.__currentTurn == True):
             raise Exception("Opponent can only move a piece when it is his turn")
 
+        self.__parentNode.boardStatesTree(self.__currentTurn, self.__depthChecking)
+        self.updateEvaluations()
+
         childNode = self.__parentNode.getChildNode(prevCoordinates, newCoordinates)
         if(childNode == None):
             raise Exception("This move is not possible!")
         
         self.__parentNode = childNode
-        self.__reevaluate()
         self.__currentTurn = True
 
 
@@ -101,19 +103,20 @@ class BotMinMaxAB(Bot):
         turn = self.__currentTurn
         depth = self.__depthChecking
         
-        if depth >= 0:
+        if depth <= 0:
             raise Exception("Depth must be greater than zero")
 
+        self.__parentNode.boardStatesTree(self.__currentTurn, depth)
         self.__recursiveUpdateScores(self.__parentNode, turn, depth)
         
     def __recursiveUpdateScores(self, node:BoardNode, turn:bool, depth:int):
         if depth == 0:
-            return nodeScore
+            return node.evaluatePosition(turn)
 
         nodeScore = None
+        scores = []
         if turn == True:
             node.score = -INF
-            scores = []
             for child in node.children:
                 childScore = self.__recursiveUpdateScores(child, False, depth - 1)
                 scores.append(childScore)

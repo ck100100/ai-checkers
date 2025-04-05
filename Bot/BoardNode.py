@@ -16,17 +16,17 @@ class BoardNode:
 
     def boardStatesTree (self, move_for, depth):
         if depth == 0: #Terminate recursion when depth is 0
-            return [self.__boardState]
-        possible_moves = self.__boardState.findPossibleMoves(move_for)
+            return [self.board_state]
+        possible_moves = self.findPossibleMoves(move_for)
         for move in possible_moves:
             next_move_for = RED if move_for ==WHITE else WHITE
             child_node = BoardNode (move, parent = self)
             child_node.boardStatesTree (next_move_for, depth-1)
-            self.__children.append(child_node)
-        return self.__children
+            self.children.append(child_node)
+        return self.children
 
     def getChildren (self):
-        return self.__children  
+        return self.children  
     
     def getChildNode(self, prevCoordinates:Coordinates, newCoordinates:Coordinates):
         nextBoardState = self.board_state.copy()
@@ -36,7 +36,7 @@ class BoardNode:
         currentChild = None
         while (not found) and i < len(self.children):
             currentChild = self.children[i]
-            if(currentChild == nextBoardState):
+            if(currentChild.board_state == nextBoardState):
                 found = True
             else:
                 i += 1
@@ -156,3 +156,9 @@ class BoardNode:
             if piece.is_king:
                 return True
         return False
+
+    def evaluatePosition(self, turn:bool) -> int:
+        pieceDiff = len(self.board_state.get_red_pieces()) - len(self.board_state.get_white_pieces())
+        if(turn == False):
+            pieceDiff *= -1
+        return pieceDiff

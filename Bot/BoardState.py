@@ -1,5 +1,6 @@
 from .Pawn import Pawn
 from utils.types import Coordinates
+from typing import Optional
 
 class BoardState:
     """
@@ -9,11 +10,11 @@ class BoardState:
     def __init__(self, red_pieces=None, white_pieces=None):
         if(red_pieces == None and white_pieces == None):
             self.__setInitialState()
-        elif((red_pieces != None and white_pieces != None) != True):
+        elif(red_pieces != None and white_pieces != None):
+            self.red_pieces = red_pieces
+            self.white_pieces = white_pieces #REMEMBER: these are lists of tuples
+        else:
             raise Exception("One of the piece types were not given!")
-
-        self.red_pieces = red_pieces
-        self.white_pieces = white_pieces #REMEMBER: these are lists of tuples
 
     def is_empty(self, row, col):
         return not any(piece.row == row and piece.col == col for piece in self.red_pieces + self.white_pieces)
@@ -29,21 +30,21 @@ class BoardState:
             raise Exception("This pawn does not exist!")
         pawnToMove.move(newPosition.xPos, newPosition.yPos)
         
-    def getPawnAtPosition(self, coordinates:Coordinates) -> Pawn|None:
-        searchResult = self.__searchPawnPositionInList(self, coordinates, self.red_pieces)
+    def getPawnAtPosition(self, coordinates:Coordinates) -> Optional[Pawn]:
+        searchResult = self.__searchPawnPositionInList(coordinates, self.red_pieces)
         if(searchResult != None):
             return searchResult
 
-        searchResult = self.__searchPawnPositionInList(self, coordinates, self.white_pieces)
+        searchResult = self.__searchPawnPositionInList(coordinates, self.white_pieces)
         return searchResult
         
-    def __searchPawnPositionInList(self, pos:Coordinates, list) -> Pawn|None:
+    def __searchPawnPositionInList(self, pos:Coordinates, list) -> Optional[Pawn]:
         found:bool = False
         i = 0
         while (not found) and i < len(list):
             currPawn:Pawn = list[i]
             if(currPawn.row == pos.xPos and currPawn.col == pos.yPos):
-                found == True
+                found = True
             else:
                 i += 1
 
@@ -64,7 +65,7 @@ class BoardState:
         self.white_pieces = [Pawn(row, col) for row, col in whitePiecePositions]
     
     def __eq__(self, otherObject):
-        if(isinstance(otherObject, self) == False):
+        if(isinstance(otherObject, BoardState) == False):
             raise Exception("Cant compare objects that have different types")
 
         otherBoardState:BoardState = otherObject
@@ -74,3 +75,28 @@ class BoardState:
             return True
         else:
             return False
+
+    def __str__(self):
+        arr = self.to2DArray()
+        textRepr = "Board State\n_______________________________"
+        for row in arr:
+            textRepr += "\n" + str(row)
+
+        return textRepr
+        
+    def to2DArray(self):
+        board = []
+        for i in range(8):
+            board.append([])
+            for j in range (8):
+                board[i].append(" ")
+        
+        whiteSymbol = "X"
+        redSymbol = "O"
+        for piece in self.white_pieces:
+            board[piece.row][piece.col] = whiteSymbol
+
+        for piece in self.red_pieces:
+            board[piece.row][piece.col] = redSymbol
+        
+        return board

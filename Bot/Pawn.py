@@ -39,6 +39,9 @@ class Pawn:
             return PawnType.NORMAL
 
     def __eq__(self, other):
+        if other == None:
+            return False
+        
         return self.row == other.row and self.col == other.col and self.is_king == other.is_king
 
     def __hash__(self):
