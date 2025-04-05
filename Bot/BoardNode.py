@@ -1,4 +1,6 @@
 from .Pawn import Pawn
+from .BoardState import BoardState
+from utils.types import Coordinates
 # I know we  have a constants file. i will fix it later
 BOARD_SIZE = 8
 RED = 0
@@ -6,11 +8,44 @@ WHITE = 1
 
 
 class BoardNode:
-    def __init__(self, board_state, parent=None):
-        self.board_state = board_state
+    def __init__(self, board_state:BoardState, parent=None):
+        self.board_state:BoardState = board_state
         self.parent = parent
         self.children = []
         self.score = 0  # unused for the time being
+
+    def boardStatesTree (self, move_for, depth):
+        if depth == 0: #Terminate recursion when depth is 0
+            return [self.__boardState]
+        possible_moves = self.__boardState.findPossibleMoves(move_for)
+        for move in possible_moves:
+            next_move_for = RED if move_for ==WHITE else WHITE
+            child_node = BoardNode (move, parent = self)
+            child_node.boardStatesTree (next_move_for, depth-1)
+            self.__children.append(child_node)
+        return self.__children
+
+    def getChildren (self):
+        return self.__children  
+    
+    def getChildNode(self, prevCoordinates:Coordinates, newCoordinates:Coordinates):
+        nextBoardState = self.board_state.copy()
+        nextBoardState.makeMove(prevCoordinates, newCoordinates)
+        found:bool = False
+        i = 0
+        currentChild = None
+        while (not found) and i < len(self.children):
+            currentChild = self.children[i]
+            if(currentChild == nextBoardState):
+                found = True
+            else:
+                i += 1
+        
+        if not found:
+            raise Exception("This move is not possible!")
+        
+        return currentChild
+
 
     def __str__(self):
         return str(self.board_state)
@@ -106,6 +141,9 @@ class BoardNode:
                         print("found an extra jump move from", piece.row, piece.col, "to", new_row, new_col)
                         # Recursively check for further jumps
                         self.find_jump_moves(new_node, new_node.board_state.red_pieces[-1] if move_for == RED else new_node.board_state.white_pieces[-1], move_for, children)
+
+    def getBoardState(self) -> BoardState:
+        return self.board_state
 
     def get_red_pieces(self):
         return self.board_state.red_pieces

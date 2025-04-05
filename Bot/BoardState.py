@@ -1,10 +1,17 @@
+from .Pawn import Pawn
+from utils.types import Coordinates
 
 class BoardState:
     """
     This IS used in order to represent all the
     pieces on the board
     """
-    def __init__(self, red_pieces, white_pieces):
+    def __init__(self, red_pieces=None, white_pieces=None):
+        if(red_pieces == None and white_pieces == None):
+            self.__setInitialState()
+        elif((red_pieces != None and white_pieces != None) != True):
+            raise Exception("One of the piece types were not given!")
+
         self.red_pieces = red_pieces
         self.white_pieces = white_pieces #REMEMBER: these are lists of tuples
 
@@ -15,3 +22,55 @@ class BoardState:
         new_red_pieces = [piece.copy() for piece in self.red_pieces]
         new_white_pieces = [piece.copy() for piece in self.white_pieces]
         return BoardState(new_red_pieces, new_white_pieces)
+
+    def makeMove(self, prevPosition:Coordinates, newPosition:Coordinates) -> None:
+        pawnToMove = self.getPawnAtPosition(prevPosition)
+        if(pawnToMove == None):
+            raise Exception("This pawn does not exist!")
+        pawnToMove.move(newPosition.xPos, newPosition.yPos)
+        
+    def getPawnAtPosition(self, coordinates:Coordinates) -> Pawn|None:
+        searchResult = self.__searchPawnPositionInList(self, coordinates, self.red_pieces)
+        if(searchResult != None):
+            return searchResult
+
+        searchResult = self.__searchPawnPositionInList(self, coordinates, self.white_pieces)
+        return searchResult
+        
+    def __searchPawnPositionInList(self, pos:Coordinates, list) -> Pawn|None:
+        found:bool = False
+        i = 0
+        while (not found) and i < len(list):
+            currPawn:Pawn = list[i]
+            if(currPawn.row == pos.xPos and currPawn.col == pos.yPos):
+                found == True
+            else:
+                i += 1
+
+        if found:
+            return list[i]
+        else:
+            return None
+
+
+
+    def __setInitialState(self) -> None:
+        """
+        Returns the state of the board when the game first starts
+        """
+        redPiecePositions = [(0, 0), (0, 2), (0, 4), (0, 6), (1, 1), (1, 3), (1, 5), (1, 7), (2, 0), (2, 2), (2, 4), (2, 6)]
+        whitePiecePositions = [(5, 1), (5, 3), (5, 5), (5, 7), (6, 0), (6, 2), (6, 4), (6, 6), (7, 1), (7, 3), (7, 5), (7, 7)]
+        self.red_pieces = [Pawn(row, col) for row, col in redPiecePositions]
+        self.white_pieces = [Pawn(row, col) for row, col in whitePiecePositions]
+    
+    def __eq__(self, otherObject):
+        if(isinstance(otherObject, self) == False):
+            raise Exception("Cant compare objects that have different types")
+
+        otherBoardState:BoardState = otherObject
+        equalBoardState:bool = self.red_pieces == otherBoardState.red_pieces and self.white_pieces == otherBoardState.white_pieces
+
+        if(equalBoardState):
+            return True
+        else:
+            return False
