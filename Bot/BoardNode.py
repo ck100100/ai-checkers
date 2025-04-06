@@ -1,11 +1,14 @@
 from .Pawn import Pawn
 from .BoardState import BoardState
 from utils.types import Coordinates
+import sys
+
 # I know we  have a constants file. i will fix it later
 BOARD_SIZE = 8
 RED = 0
 WHITE = 1
 
+INF:int = sys.maxsize
 
 class BoardNode:
     def __init__(self, board_state:BoardState, parent=None):
@@ -13,16 +16,23 @@ class BoardNode:
         self.parent = parent
         self.children = []
         self.score = 0  # unused for the time being
+        self.alpha = -INF
+        self.beta = INF
 
-    def boardStatesTree (self, move_for, depth):
-        if depth == 0: #Terminate recursion when depth is 0
+    def boardStatesTree(self, move_for, depth):
+        if depth == 0:  # Terminate recursion when depth is 0
             return [self.board_state]
+
+        if self.children:  # Reuse existing children if they already exist
+            return self.children
+
         possible_moves = self.findPossibleMoves(move_for)
         for move in possible_moves:
-            next_move_for = RED if move_for ==WHITE else WHITE
-            child_node = BoardNode (move, parent = self)
-            child_node.boardStatesTree (next_move_for, depth-1)
+            next_move_for = RED if move_for == WHITE else WHITE
+            child_node = BoardNode(move, parent=self)
+            child_node.boardStatesTree(next_move_for, depth - 1)
             self.children.append(child_node)
+
         return self.children
 
     def getChildren (self):

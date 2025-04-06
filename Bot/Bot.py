@@ -64,7 +64,6 @@ class BotMinMaxAB(Bot):
             raise Exception("Opponent can only move a piece when it is his turn")
 
         self.__parentNode.boardStatesTree(self.__currentTurn, self.__depthChecking)
-        self.updateEvaluations()
 
         childNode = self.__parentNode.getChildNode(prevCoordinates, newCoordinates)
         if(childNode == None):
@@ -72,6 +71,8 @@ class BotMinMaxAB(Bot):
         
         self.__parentNode = childNode
         self.__currentTurn = True
+
+        self.updateEvaluations()
 
 
     def getBotMove(self) -> BoardState:
@@ -109,21 +110,31 @@ class BotMinMaxAB(Bot):
         self.__parentNode.boardStatesTree(self.__currentTurn, depth)
         self.__recursiveUpdateScores(self.__parentNode, turn, depth)
         
-    def __recursiveUpdateScores(self, node:BoardNode, turn:bool, depth:int):
-        if depth == 0:
+    def __recursiveUpdateScores(self, node: BoardNode, turn: bool, depth: int, alpha: int = -INF, beta: int = INF):
+        """
+        Recursively updates the scores of the nodes in the game tree using alpha-beta pruning.
+        """
+        if depth == 0 or node.is_terminal():
             return node.evaluatePosition(turn)
 
-        nodeScore = None
-        scores = []
-        if turn == True:
-            node.score = -INF
+        if turn:  # Maximizing player
+            maxEval = -INF
             for child in node.children:
-                childScore = self.__recursiveUpdateScores(child, False, depth - 1)
-                scores.append(childScore)
-            node.score = max(scores)
-        else:
-            node.score = INF
+                eval = self.__recursiveUpdateScores(child, False, depth - 1, alpha, beta)
+                maxEval = max(maxEval, eval)
+                alpha = max(alpha, eval)
+                if beta <= alpha:
+                    break  # Prune the branch
+            node.score = maxEval
+            return maxEval
+        else:  # Minimizing player
+            minEval = INF
             for child in node.children:
-                childScore = self.__recursiveUpdateScores(child, True, depth - 1)
-                scores.append(childScore)
-            node.score = min(scores)
+                eval = self.__recursiveUpdateScores(child, True, depth - 1, alpha, beta)
+                minEval = min(minEval, eval)
+                beta = min(beta, eval)
+                if beta <= alpha:
+                    break  # Prune the branch
+            node.score = minEval
+            return minEval
+
