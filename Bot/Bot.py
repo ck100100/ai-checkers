@@ -6,6 +6,8 @@ from utils.types import Coordinates
 from .BoardNode import BoardNode
 
 INF:int = sys.maxsize
+RED =0
+WHITE=1
 
 class Bot(ABC):
     """
@@ -42,6 +44,9 @@ class BotMinMaxAB(Bot):
         self.__currentTurn:bool
         self.__depthChecking = depthChecking
         self.initialiseState()
+        self._visited_nodes = 0
+        self._pruned_nodes = 0
+        self._pruned_branches = [] #For testing
 
     def initialiseState(self, turn=False):
         """
@@ -85,11 +90,20 @@ class BotMinMaxAB(Bot):
             raise Exception("Can only make a move when it is the bot's move")
 
         maxScore = -INF
-        maxScoringChild:BoardNode 
-        for child in self.__parentNode.children:
-            if child.score > maxScore:
-                maxScore = child.score
-                maxScoringChild = child
+        maxScoringChild:BoardNode         
+        alpha = -INF
+        beta = INF
+        possible_moves = self.__parentNode.findPossibleMovesWithPruning(True) #moves with a level of pruning
+        #keep the best 10 moves
+        possible_moves = sorted(possible_moves, key=lambda move: move.evaluatePosition(True), reverse=True) [:10]
+        for move in possible_moves:
+            moveScore = self.__recursiveUpdateScores(move,self.__depthChecking -1, alpha,beta, False)
+            if moveScore> maxScore:
+                maxScore = moveScore
+                maxScoringChild = move
+            alpha = max (alpha, maxScore)
+            if maxScoringChild ==None:
+                raise Exception("Bot could not find valid move.")          
         
         self.__parentNode = maxScoringChild
         self.__currentTurn = False
@@ -116,25 +130,37 @@ class BotMinMaxAB(Bot):
         """
         if depth == 0 or node.is_terminal():
             return node.evaluatePosition(turn)
+        
+        children = node.findPossibleMovesWithPruning(RED if turn else WHITE ,alpha,beta)
+        children.sort(key=lambda ch: ch.evaluatePosition(turn),reverse= turn)
+
 
         if turn:  # Maximizing player
             maxEval = -INF
-            for child in node.children:
+            for child in children:
                 eval = self.__recursiveUpdateScores(child, False, depth - 1, alpha, beta)
+                self._visited_nodes += 1 #Ignore this/for testing
                 maxEval = max(maxEval, eval)
                 alpha = max(alpha, eval)
                 if beta <= alpha:
+                    self._pruned_nodes += 1  # Count pruning
+                    self._pruned_branches.append((node,child))
                     break  # Prune the branch
             node.score = maxEval
             return maxEval
         else:  # Minimizing player
             minEval = INF
-            for child in node.children:
+            for child in children:
                 eval = self.__recursiveUpdateScores(child, True, depth - 1, alpha, beta)
+                self._visited_nodes += 1
                 minEval = min(minEval, eval)
                 beta = min(beta, eval)
                 if beta <= alpha:
+                    self._pruned_nodes += 1  # Count pruning
+                    self._pruned_branches.append((node,child))
                     break  # Prune the branch
             node.score = minEval
             return minEval
 
+    def getPrunedBranches(self):
+        return self._pruned_branches

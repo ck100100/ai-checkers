@@ -26,7 +26,7 @@ class BoardNode:
         if self.children:  # Reuse existing children if they already exist
             return self.children
 
-        possible_moves = self.findPossibleMoves(move_for)
+        possible_moves = self.findPossibleMovesWithPruning(move_for)
         for move in possible_moves:
             next_move_for = RED if move_for == WHITE else WHITE
             child_node = BoardNode(move, parent=self)
@@ -152,6 +152,24 @@ class BoardNode:
                         # Recursively check for further jumps
                         self.find_jump_moves(new_node, new_node.board_state.red_pieces[-1] if move_for == RED else new_node.board_state.white_pieces[-1], move_for, children)
 
+    def findPossibleMovesWithPruning(self, turn:bool, alpha:int = -INF, beta:int = INF) -> list:
+            '''Generates possible moves for each node, applying alpha-beta pruning while generating'''
+            possible_moves= []
+            for move in self.findPossibleMoves(turn):
+                move_score = move.evaluatePosition(turn)
+                if turn:# maximizing player
+                    if move_score>= beta:# if the move is so good that surpasses the best score the min player accepts
+                        #the min player will not choose this move
+                        break #prune the branch
+                    alpha = max(alpha, move_score)
+                else:#minimizing player
+                    if move_score <= alpha:#if the move's score is so low that the max has a better option
+                        #the maximizer will not choose this branch
+                        break
+                    beta = min (beta,move_score)
+                possible_moves.append(move)
+            return possible_moves
+
     def getBoardState(self) -> BoardState:
         return self.board_state
 
@@ -168,7 +186,32 @@ class BoardNode:
         return False
 
     def evaluatePosition(self, turn:bool) -> int:
-        pieceDiff = len(self.board_state.get_red_pieces()) - len(self.board_state.get_white_pieces())
-        if(turn == False):
-            pieceDiff *= -1
-        return pieceDiff
+        red_score = 0
+        white_score = 0
+        for piece in self.board_state.get_red_pieces():
+            score = 1 #Basic value
+            if piece.is_king:
+                score += 2 #Kings are more valuable
+            #If we are in a central position more valuable
+            if 2<= piece.row <= 5 and 2<= piece.col <=5:
+                score += 0.5
+                red_score +=score
+
+        for piece in self.board_state.get_white_pieces():
+            score = 1
+            if piece.is_king:
+                score += 2
+            if 2 <= piece.row <= 5 and 2 <= piece.col <= 5:
+                score += 0.5
+            white_score += score
+
+        eval_score = red_score - white_score #possitive score is good for red, negative for white player
+        if turn is False:
+            eval_score *= -1
+        return eval_score
+    
+        # pieceDiff = len(self.board_state.get_red_pieces()) - len(self.board_state.get_white_pieces())
+        # if(turn == False):
+        #     pieceDiff *= -1
+        # return pieceDiff        
+        

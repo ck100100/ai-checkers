@@ -6,7 +6,7 @@
 #right arrow moves to next state, left to previous.
 #
 
-
+from Bot import *
 import pygame
 # from .BoardNode import BoardNode
 # from .BoardState import BoardState
@@ -133,6 +133,18 @@ class ReplayHandler:
                         self.update()
 
         pygame.quit()
+
+    def set_pruned_branches(self, pruned_branches):
+            self.pruned_branches = pruned_branches
+
+    def print_pruned_branches(self):
+        if not self.pruned_branches:
+            print("No pruned branches to display.")
+            return
+    
+        print("Pruned Branches:")
+        for parent, child in self.pruned_branches:
+            print(f"Parent Node: {parent}, Pruned Child Node: {child}")
 
     def testing_function(self):
         print(f"WHITE: {white}")  # Debug: Check the value of WHITE

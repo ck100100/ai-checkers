@@ -8,6 +8,7 @@ from Bot.replay_viewer import ReplayHandler
 from Bot.BoardNode import BoardNode
 from Bot.BoardState import BoardState
 from Bot.Pawn import Pawn
+from Bot.Bot import BotMinMaxAB
 
 # looks like a Node class method. could be moved there
 def initialize_starting_positions():
@@ -49,6 +50,12 @@ def main():
 
     # Create the root node
     root_node = BoardNode(initial_board_state)
+    bot = BotMinMaxAB()
+    bot.initialiseState()
+    #Set the initial state of the bot to the root node
+    bot._BotMinMaxAB__parentNode = root_node
+    bot._BotMinMaxAB__currentTurn = True
+
 
     # Play a random game
     final_node, moves_made = play_random_game(root_node)
@@ -60,10 +67,12 @@ def main():
 
     # Initialize the replay handler
     replayHandler = ReplayHandler(moves_made)
+    replayHandler.set_pruned_branches(bot.getPrunedBranches())
 
     # Start the replay
     replayHandler.start_replay()
     #replayHandler.testing_function()
+    
 
 if __name__ == "__main__":
     main()
