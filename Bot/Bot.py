@@ -81,6 +81,7 @@ class BotMinMaxAB(Bot):
 
 
     def getBotMove(self) -> BoardState:
+        print("reminder that depth checking is set to: ", self.__depthChecking)
         """
         This will be used to ask the bot what the next move will be.
         here we will have to execute the min-max algorithm and do

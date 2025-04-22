@@ -59,8 +59,13 @@ class BoardState:
         """
         Returns the state of the board when the game first starts
         """
-        redPiecePositions = [(0, 0), (0, 2), (0, 4), (0, 6), (1, 1), (1, 3), (1, 5), (1, 7), (2, 0), (2, 2), (2, 4), (2, 6)]
-        whitePiecePositions = [(5, 1), (5, 3), (5, 5), (5, 7), (6, 0), (6, 2), (6, 4), (6, 6), (7, 1), (7, 3), (7, 5), (7, 7)]
+
+        # redPiecePositions = [(0, 0), (0, 2), (0, 4), (0, 6), (1, 1), (1, 3), (1, 5), (1, 7), (2, 0), (2, 2), (2, 4), (2, 6)]
+        # whitePiecePositions = [(5, 1), (5, 3), (5, 5), (5, 7), (6, 0), (6, 2), (6, 4), (6, 6), (7, 1), (7, 3), (7, 5), (7, 7)]
+        # for thesting purposes
+        redPiecePositions = [(4, 4), (0,0)]
+        whitePiecePositions = [(6, 4), (7,0)]
+
         self.red_pieces = [Pawn(row, col) for row, col in redPiecePositions]
         self.white_pieces = [Pawn(row, col) for row, col in whitePiecePositions]
     

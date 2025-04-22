@@ -19,21 +19,28 @@ class BoardNode:
         self.alpha = -INF
         self.beta = INF
         self.__isTerminal:bool = False
+        self.movenum = 1
 
     def boardStatesTree(self, move_for, depth):
+        print("called to build the tree, depth", depth)
         if depth == 0:  # Terminate recursion when depth is 0
             return [self.board_state]
+        #print("reached 1, depth", depth)
+        # if self.children:  # Reuse existing children if they already exist
+        #     return self.children
 
-        if self.children:  # Reuse existing children if they already exist
-            return self.children
-
-        possible_moves = self.findPossibleMovesWithPruning(move_for)
+        possible_moves = self.findPossibleMoves(move_for)
         if(len(possible_moves) == 0):
+            #print("reached 2")
             self.setTerminal()
+        child=1
         for move in possible_moves:
+            #print("reached 3")
             next_move_for = RED if move_for == WHITE else WHITE
+            print("looking for moves for child", child, "of", self.movenum, "for", move_for)
             move.boardStatesTree(next_move_for, depth - 1)
             self.children.append(move)
+            child += 1
 
         return self.children
 
@@ -92,8 +99,10 @@ class BoardNode:
                 new_board_state.red_pieces.remove(captured_piece)
             else:
                 new_board_state.white_pieces.remove(captured_piece)
-
-        return BoardNode(new_board_state, self)
+    
+        new_node = BoardNode(new_board_state, self)
+        new_node.movenum = self.movenum + 1  # Increment movenum based on the parent node
+        return new_node
 
     def findPossibleMoves(self, move_for):
         children = []
@@ -112,8 +121,9 @@ class BoardNode:
                     new_row, new_col = piece.row + direction, piece.col + dc
                     if self.is_within_bounds(new_row, new_col) and self.board_state.is_empty(new_row, new_col):
                         new_node = self.create_new_node(piece, new_row, new_col)
+                        #new_node.movenum += 1
                         children.append(new_node)
-                        print("found a normal move from", piece.row, piece.col, "to", new_row, new_col)
+                        print("move:",self.movenum, "found a normal move from", piece.row, piece.col, "to", new_row, new_col)
 
                 # Jump moves
                 for dc in [-1, 1]:
@@ -124,8 +134,9 @@ class BoardNode:
                                         if p.row == mid_row and p.col == mid_col), None)
                         if mid_piece:
                             new_node = self.create_new_node(piece, new_row, new_col, mid_piece)
+                            #new_node.movenum += 1
                             children.append(new_node)
-                            print("found a jump move from", piece.row, piece.col, "to", new_row, new_col)
+                            print("move:",self.movenum," found a jump move from", piece.row, piece.col, "to", new_row, new_col)
                             # Recursively check for further jumps
                             self.find_jump_moves(new_node, new_node.board_state.red_pieces[-1] if move_for == RED else new_node.board_state.white_pieces[-1], move_for, children)
 
@@ -149,8 +160,9 @@ class BoardNode:
                     print("mid_piece", mid_piece, "at", mid_row, mid_col)
                     if mid_piece:
                         new_node = node.create_new_node(piece, new_row, new_col, mid_piece)
+                        #new_node.movenum += 1
                         children.append(new_node)
-                        print("found an extra jump move from", piece.row, piece.col, "to", new_row, new_col)
+                        print("move:",self.movenum," found an extra jump move from", piece.row, piece.col, "to", new_row, new_col)
                         # Recursively check for further jumps
                         self.find_jump_moves(new_node, new_node.board_state.red_pieces[-1] if move_for == RED else new_node.board_state.white_pieces[-1], move_for, children)
 
