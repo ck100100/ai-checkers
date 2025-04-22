@@ -29,9 +29,8 @@ class BoardNode:
         possible_moves = self.findPossibleMovesWithPruning(move_for)
         for move in possible_moves:
             next_move_for = RED if move_for == WHITE else WHITE
-            child_node = BoardNode(move, parent=self)
-            child_node.boardStatesTree(next_move_for, depth - 1)
-            # self.children.append(child_node)
+            # child_node = BoardNode(move, parent=self)
+            move.boardStatesTree(next_move_for, depth - 1)
             self.children.append(move)
 
         return self.children
