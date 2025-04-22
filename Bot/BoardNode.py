@@ -18,6 +18,7 @@ class BoardNode:
         self.score = 0  # unused for the time being
         self.alpha = -INF
         self.beta = INF
+        self.__isTerminal:bool = False
 
     def boardStatesTree(self, move_for, depth):
         if depth == 0:  # Terminate recursion when depth is 0
@@ -27,9 +28,10 @@ class BoardNode:
             return self.children
 
         possible_moves = self.findPossibleMovesWithPruning(move_for)
+        if(len(possible_moves) == 0):
+            self.setTerminal()
         for move in possible_moves:
             next_move_for = RED if move_for == WHITE else WHITE
-            # child_node = BoardNode(move, parent=self)
             move.boardStatesTree(next_move_for, depth - 1)
             self.children.append(move)
 
@@ -215,3 +217,8 @@ class BoardNode:
         #     pieceDiff *= -1
         # return pieceDiff        
         
+    def is_terminal(self) -> bool:
+        return self.__isTerminal
+    
+    def setTerminal(self) -> None:
+        self.__isTerminal = True

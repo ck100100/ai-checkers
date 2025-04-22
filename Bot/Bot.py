@@ -98,7 +98,7 @@ class BotMinMaxAB(Bot):
         possible_moves = sorted(possible_moves, key=lambda move: move.evaluatePosition(True), reverse=True) [:10]
         for move in possible_moves:
             moveScore = self.__recursiveUpdateScores(move,self.__depthChecking -1, alpha,beta, False)
-            if moveScore> maxScore:
+            if moveScore>= maxScore:
                 maxScore = moveScore
                 maxScoringChild = move
             alpha = max (alpha, maxScore)
