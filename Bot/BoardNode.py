@@ -2,11 +2,10 @@ from .Pawn import Pawn
 from .BoardState import BoardState
 from utils.types import Coordinates
 import sys
+from utils.constants import WHITE, RED, BOARD_SIZE
 
 # I know we  have a constants file. i will fix it later
-BOARD_SIZE = 8
-RED = 0
-WHITE = 1
+
 
 INF:int = sys.maxsize
 

@@ -7,28 +7,20 @@
 #
 
 
+
 import pygame
+from utils.constants import *
+from Bot.Game import CheckersGame
+from Bot.BoardNode import BoardNode
+
+
 # from .BoardNode import BoardNode
 # from .BoardState import BoardState
 
 pygame.init()
 
 # Constants, should be in constants.py
-red = (255, 0, 0)
-white = (255, 255, 255)
-gray = (128, 128, 128)
-gold = (212, 175, 55)
-black = (0, 0, 0)
 
-WIDTH = 800
-WIDTH_OF_SCREEN = 1000
-HEIGHT = 800
-
-ROWS = 8
-COLUMNS = 8
-SQUARE_SIZE = WIDTH // COLUMNS
-
-FPS = 24
 #end of constants
 
 WINDOW = pygame.display.set_mode((WIDTH_OF_SCREEN, HEIGHT))  # WIDTH_OF_SCREEN has extra space for stats
@@ -38,12 +30,21 @@ FONT = pygame.font.SysFont('arial', 15)
 
 class ReplayHandler:
     def __init__(self, replay_data):
-        self.replay_data = replay_data
+        replay_data = self.load_replay_from_game()
+        # self.replay_data = replay_data
         self.current_move = 0
         self.window = WINDOW
 
         self.replay_active = True
         # self.start_replay()
+
+    def load_replay_from_game():
+        """
+        Simulate a game using CheckersGame and return the move history for replay.
+        """
+        game = CheckersGame()
+        game.start_game()
+        return game.move_history
 
     def test_board(self):
         self.window.fill(black)
