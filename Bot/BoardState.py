@@ -28,7 +28,7 @@ class BoardState:
         pawnToMove = self.getPawnAtPosition(prevPosition)
         if(pawnToMove == None):
             raise Exception("This pawn does not exist!")
-        pawnToMove.move(newPosition.xPos, newPosition.yPos)
+        pawnToMove.move(newPosition.yPos, newPosition.xPos)
         
     def getPawnAtPosition(self, coordinates:Coordinates) -> Optional[Pawn]:
         searchResult = self.__searchPawnPositionInList(coordinates, self.red_pieces)
@@ -43,7 +43,7 @@ class BoardState:
         i = 0
         while (not found) and i < len(list):
             currPawn:Pawn = list[i]
-            if(currPawn.row == pos.xPos and currPawn.col == pos.yPos):
+            if(currPawn.col == pos.xPos and currPawn.row == pos.yPos):
                 found = True
             else:
                 i += 1

@@ -8,6 +8,7 @@ from Bot.replay_viewer import ReplayHandler
 from Bot.BoardNode import BoardNode
 from Bot.BoardState import BoardState
 from Bot.Pawn import Pawn
+from Bot.GameInterface import GameInterface
 from Bot.Bot import BotMinMaxAB
 
 # looks like a Node class method. could be moved there
@@ -75,4 +76,8 @@ def main():
     
 
 if __name__ == "__main__":
-    main()
+    # main()
+    GameInterface()
+
+
+
