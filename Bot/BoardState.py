@@ -69,12 +69,35 @@ class BoardState:
             raise Exception("Cant compare objects that have different types")
 
         otherBoardState:BoardState = otherObject
-        equalBoardState:bool = self.red_pieces == otherBoardState.red_pieces and self.white_pieces == otherBoardState.white_pieces
+        # equalBoardState:bool = self.red_pieces == otherBoardState.red_pieces and self.white_pieces == otherBoardState.white_pieces
+        equalBoardState:bool = self.__comparePawnArrays(self.red_pieces, otherBoardState.red_pieces) and self.__comparePawnArrays(self.white_pieces, otherBoardState.white_pieces)
 
         if(equalBoardState):
             return True
         else:
             return False
+
+    def __comparePawnArrays(self, pawnList1:list[Pawn], pawnList2:list[Pawn]) -> bool:
+        list1 = pawnList1.copy()
+        list2 = pawnList2.copy()
+
+        while len(list1) > 0:
+            found = False
+            for j in range(len(list2)):
+                if(list1[0] == list2[j]):
+                    found = True
+                    list2.pop(j)
+                    break
+
+            if(found == False):
+                return False
+            else:
+                list1.pop(0)
+
+        if(len(list2) > 0):
+            return False
+        
+        return True
 
     def __str__(self):
         arr = self.to2DArray()

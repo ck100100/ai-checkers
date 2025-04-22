@@ -31,7 +31,8 @@ class BoardNode:
             next_move_for = RED if move_for == WHITE else WHITE
             child_node = BoardNode(move, parent=self)
             child_node.boardStatesTree(next_move_for, depth - 1)
-            self.children.append(child_node)
+            # self.children.append(child_node)
+            self.children.append(move)
 
         return self.children
 
@@ -188,7 +189,7 @@ class BoardNode:
     def evaluatePosition(self, turn:bool) -> int:
         red_score = 0
         white_score = 0
-        for piece in self.board_state.get_red_pieces():
+        for piece in self.board_state.red_pieces:
             score = 1 #Basic value
             if piece.is_king:
                 score += 2 #Kings are more valuable
@@ -197,7 +198,7 @@ class BoardNode:
                 score += 0.5
                 red_score +=score
 
-        for piece in self.board_state.get_white_pieces():
+        for piece in self.board_state.white_pieces:
             score = 1
             if piece.is_king:
                 score += 2
