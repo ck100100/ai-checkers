@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import sys
 from .BoardState import BoardState
 from .Pawn import Pawn
-from utils.types import Coordinates
+from utils.types import Coordinates, Player
 from .BoardNode import BoardNode
 
 INF:int = sys.maxsize
@@ -39,7 +39,7 @@ class BotMinMaxAB(Bot):
     This class will be used to create a bot using the
     min max algorithm with alpha-beta pruning
     """
-    def __init__(self, depthChecking=10):
+    def __init__(self, player:Player, depthChecking=10):
         self.__parentNode:BoardNode|None = None
         self.__currentTurn:bool
         self.__depthChecking = depthChecking
@@ -47,6 +47,8 @@ class BotMinMaxAB(Bot):
         self._visited_nodes = 0
         self._pruned_nodes = 0
         self._pruned_branches = [] #For testing
+        self.__player = player
+        self.__otherPlayer = Player.RED if player == Player.WHITE else Player.WHITE
 
     def initialiseState(self, turn=False):
         """
@@ -70,7 +72,8 @@ class BotMinMaxAB(Bot):
 
         self.__parentNode.boardStatesTree(self.__currentTurn, self.__depthChecking)
 
-        childNode = self.__parentNode.getChildNode(prevCoordinates, newCoordinates)
+
+        childNode = self.__parentNode.getChildNode(prevCoordinates, newCoordinates, self.__otherPlayer)
         if(childNode == None):
             raise Exception("This move is not possible!")
         

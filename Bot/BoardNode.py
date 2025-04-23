@@ -1,6 +1,6 @@
 from .Pawn import Pawn
 from .BoardState import BoardState
-from utils.types import Coordinates
+from utils.types import Coordinates, Player
 import sys
 
 # I know we  have a constants file. i will fix it later
@@ -47,15 +47,15 @@ class BoardNode:
     def getChildren (self):
         return self.children  
     
-    def getChildNode(self, prevCoordinates:Coordinates, newCoordinates:Coordinates):
+    def getChildNode(self, prevCoordinates:Coordinates, newCoordinates:Coordinates, player:Player):
         nextBoardState = self.board_state.copy()
         nextBoardState.makeMove(prevCoordinates, newCoordinates)
         found:bool = False
         i = 0
         currentChild = None
         while (not found) and i < len(self.children):
-            currentChild = self.children[i]
-            if(currentChild.board_state == nextBoardState):
+            currentChild:'BoardNode' = self.children[i]
+            if(currentChild.board_state.comparePawnsByPlayer(nextBoardState, player)):
                 found = True
             else:
                 i += 1

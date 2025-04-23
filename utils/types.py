@@ -8,3 +8,7 @@ class Coordinates:
 class PawnType(IntEnum):
     NORMAL = 0
     KING = 1
+
+class Player(IntEnum):
+    RED = 0
+    WHITE = 1

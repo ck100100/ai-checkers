@@ -1,11 +1,11 @@
 from Bot.Bot import BotMinMaxAB 
 from Bot.BoardNode import BoardNode
-from utils.types import Coordinates
+from utils.types import Coordinates, Player
 
 class GameInterface:
     __bot:BotMinMaxAB
     def __init__(self):
-        self.__bot = BotMinMaxAB(3)
+        self.__bot = BotMinMaxAB(Player.WHITE, 3)
         self.__bot.initialiseState(True)
         self.gameLoop()
 
