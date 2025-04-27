@@ -1,23 +1,35 @@
 from Bot.Bot import BotMinMaxAB 
 from Bot.BoardNode import BoardNode
-from utils.types import Coordinates, Player
+from utils.types import Coordinates, Piece
 
 class GameInterface:
     __bot:BotMinMaxAB
+    __userPlayFirst = True
     def __init__(self):
-        self.__bot = BotMinMaxAB(Player.WHITE, 3)
-        self.__bot.initialiseState(True)
+        self.setSettings()
+        self.__bot = BotMinMaxAB(Piece.WHITE if self.__userPlayFirst else Piece.RED, 3)
+        # self.__bot.initialiseState(not self.__userPlayFirst)
         self.gameLoop()
 
+    def setSettings(self):
+        valid:bool = False
+        while valid == False:
+            res = input("Do you want to play first?[Y\\N]:")
+            if(res == "Y"):
+                self.__userPlayFirst = True
+                valid = True
+            elif res == "N":
+                self.__userPlayFirst = False
+                valid = True
+
     def gameLoop(self) -> None:
-        opponentMove:bool = False
         while True:
             self.paintBoard()
-            if opponentMove:
+            if self.__userPlayFirst:
                 self.getOpponentMove()
             else:
                 self.makeBotMove()
-            opponentMove = False if opponentMove else True
+            self.__userPlayFirst = False if self.__userPlayFirst else True
 
     def paintBoard(self):
         print(self.__bot.getCurrentBoardState())

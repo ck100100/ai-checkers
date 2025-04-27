@@ -9,6 +9,10 @@ class PawnType(IntEnum):
     NORMAL = 0
     KING = 1
 
-class Player(IntEnum):
+class Piece(IntEnum):
     RED = 0
     WHITE = 1
+
+class Player(IntEnum):
+    YOU = 0
+    OPP = 1

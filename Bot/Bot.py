@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import sys
 from .BoardState import BoardState
 from .Pawn import Pawn
-from utils.types import Coordinates, Player
+from utils.types import Coordinates, Piece, Player
 from .BoardNode import BoardNode
 
 INF:int = sys.maxsize
@@ -39,25 +39,25 @@ class BotMinMaxAB(Bot):
     This class will be used to create a bot using the
     min max algorithm with alpha-beta pruning
     """
-    def __init__(self, player:Player, depthChecking=10):
+    def __init__(self, player:Piece, depthChecking=10):
         self.__parentNode:BoardNode|None = None
         self.__currentTurn:bool
         self.__depthChecking = depthChecking
-        self.initialiseState()
         self._visited_nodes = 0
         self._pruned_nodes = 0
         self._pruned_branches = [] #For testing
         self.__player = player
-        self.__otherPlayer = Player.RED if player == Player.WHITE else Player.WHITE
+        self.__otherPlayer = Piece.RED if player == Piece.WHITE else Piece.WHITE
+        self.initialiseState()
 
-    def initialiseState(self, turn=False):
+    def initialiseState(self):
         """
         This is used to create a tree including all of the possible
         states that the game can have 
         """
-        self.__currentTurn = turn
-        initialBoardState = BoardState()
-        self.__parentNode = BoardNode(initialBoardState)
+        self.__currentTurn = True if self.__player == Piece.RED else False
+        initialBoardState = BoardState(player=self.__player)
+        self.__parentNode = BoardNode(initialBoardState, self.__player)
 
     def getCurrentBoardState(self) -> BoardState:
         return self.__parentNode.getBoardState()
@@ -70,10 +70,10 @@ class BotMinMaxAB(Bot):
         if(self.__currentTurn == True):
             raise Exception("Opponent can only move a piece when it is his turn")
 
-        self.__parentNode.boardStatesTree(self.__currentTurn, self.__depthChecking)
+        self.__parentNode.boardStatesTree(Player.YOU if self.__currentTurn else Player.OPP, self.__depthChecking)
 
 
-        childNode = self.__parentNode.getChildNode(prevCoordinates, newCoordinates, self.__otherPlayer)
+        childNode = self.__parentNode.getChildNode(prevCoordinates, newCoordinates, Player.OPP)
         if(childNode == None):
             raise Exception("This move is not possible!")
         
@@ -97,9 +97,11 @@ class BotMinMaxAB(Bot):
         maxScoringChild:BoardNode         
         alpha = -INF
         beta = INF
-        possible_moves = self.__parentNode.findPossibleMovesWithPruning(True) #moves with a level of pruning
+        possible_moves = self.__parentNode.findPossibleMovesWithPruning(Player.YOU) #moves with a level of pruning
         #keep the best 10 moves
         possible_moves = sorted(possible_moves, key=lambda move: move.evaluatePosition(True), reverse=True) [:10]
+        if(len(possible_moves) == 0):
+            raise Exception("No moves available!")
         for move in possible_moves:
             moveScore = self.__recursiveUpdateScores(move,self.__depthChecking -1, alpha,beta, False)
             if moveScore>= maxScore:
@@ -108,7 +110,6 @@ class BotMinMaxAB(Bot):
             alpha = max (alpha, maxScore)
             if maxScoringChild ==None:
                 raise Exception("Bot could not find valid move.")          
-        
         self.__parentNode = maxScoringChild
         self.__currentTurn = False
         return maxScoringChild.board_state
@@ -125,7 +126,7 @@ class BotMinMaxAB(Bot):
         if depth <= 0:
             raise Exception("Depth must be greater than zero")
 
-        self.__parentNode.boardStatesTree(self.__currentTurn, depth)
+        self.__parentNode.boardStatesTree(Player.YOU if self.__currentTurn else Player.OPP, depth)
         self.__recursiveUpdateScores(self.__parentNode, turn, depth)
         
     def __recursiveUpdateScores(self, node: BoardNode, turn: bool, depth: int, alpha: int = -INF, beta: int = INF):

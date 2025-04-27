@@ -1,5 +1,5 @@
 from .Pawn import Pawn
-from utils.types import Coordinates, Player
+from utils.types import Coordinates, Piece
 from typing import Optional
 
 class BoardState:
@@ -7,8 +7,10 @@ class BoardState:
     This IS used in order to represent all the
     pieces on the board
     """
-    def __init__(self, red_pieces=None, white_pieces=None):
+    def __init__(self, red_pieces=None, white_pieces=None, player:Piece=None):
         if(red_pieces == None and white_pieces == None):
+            if(player == None):
+                raise Exception("Need to supply a player value")
             self.__setInitialState()
         elif(red_pieces != None and white_pieces != None):
             self.red_pieces = red_pieces
@@ -75,11 +77,11 @@ class BoardState:
 
         return isEqualBoardState
 
-    def comparePawnsByPlayer(self, otherBoardState:'BoardState', player:Player):
+    def comparePawnsByPlayer(self, otherBoardState:'BoardState', player:Piece):
         res:bool
-        if(player == Player.WHITE):
+        if(player == Piece.WHITE):
             res = self.__comparePawnArrays(self.white_pieces, otherBoardState.white_pieces)
-        elif(player == Player.RED):
+        elif(player == Piece.RED):
             res = self.__comparePawnArrays(self.red_pieces, otherBoardState.red_pieces)
         
         return res
