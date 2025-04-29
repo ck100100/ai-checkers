@@ -4,6 +4,9 @@ import torch.nn.functional as F
 import numpy as np
 from collections import deque, defaultdict
 from .BoardNode import BoardNode
+from .BoardState import BoardState
+
+from utils.types import Coordinates, Piece
 
 
 # 1. Neural Network Architecture
@@ -30,80 +33,90 @@ def board_to_tensor(red_pieces, white_pieces, current_player):
     tensor = torch.zeros(5, 8, 8)
     
     # Red pieces (channel 0) and kings (channel 1)
-    for x, y, is_king in red_pieces:
+
+
+    for pawn in red_pieces:
+        x, y = pawn.row, pawn.col
         tensor[0, x, y] = 1
-        if is_king:
+        if pawn.is_king:
             tensor[1, x, y] = 1
     
-    # White pieces (channel 2) and kings (channel 3)
-    for x, y, is_king in white_pieces:
+    for pawn in white_pieces:
+        x, y = pawn.row, pawn.col
         tensor[2, x, y] = 1
-        if is_king:
+        if pawn.is_king:
+            tensor[3, x, y] = 1
             tensor[3, x, y] = 1
     
     # Turn channel (channel 4)
-    tensor[4] = 1.0 if current_player == "red" else 0.0
+    tensor[4] = 1.0 if current_player == Piece.RED else 0.0
     
     return tensor
 
-def is_draw_by_repetition(state_hash, state_counter, threshold=3):
+def is_draw_by_repetition(state, state_counter, threshold=3):
     """Check for repeated board states"""
-    state_counter[state_hash] += 1
-    return state_counter[state_hash] >= threshold
+    state_counter[state] += 1
+    return state_counter[state] >= threshold
 
 
 # 3. Self-Play
 
-def play_game(model, epsilon=0.1):
+def play_game(model, epsilon=0.1, device):
     """Generate a game through self-play"""
     # Initialize game state
-    red_pieces = [(x, y, False) for x in range(3) for y in range(8) if (x + y) % 2 == 1]
-    white_pieces = [(x, y, False) for x in range(5, 8) for y in range(8) if (x + y) % 2 == 1]
-    current_player = "red"
-    history = []
+    # red_pieces = [(x, y, False) for x in range(3) for y in range(8) if (x + y) % 2 == 1]
+    # white_pieces = [(x, y, False) for x in range(5, 8) for y in range(8) if (x + y) % 2 == 1]
+    startingBoardState = BoardState(None, None, Piece.RED)
+    currentBoardNode = BoardNode(startingBoardState, Piece.RED)
+    current_player = Piece.RED
+    tensorhistory = []
+    boardHistory = []
     state_counter = defaultdict(int)
-
-    BoardNode()
+    turn_counter = 1
     
     while True:
-        # Generate all legal moves (implement your move generator)
-        moves = generate_legal_moves(red_pieces, white_pieces, current_player)
-        
-        if not moves:
-            winner = "white" if current_player == "red" else "red"
-            break
+        #print("turn: ", turn_counter)
+        moves = currentBoardNode.findPossibleMoves(move_for = current_player)
+        tensor_list = []
+        if moves:
+            # Convert moves to tensors with current player
+            for move in moves:
+                red_pieces = move.getBoardState().red_pieces
+                white_pieces = move.getBoardState().white_pieces
+                tensor = board_to_tensor(red_pieces, white_pieces, current_player)
+                tensor_list.append(tensor)
+            #tensor batch
+            move_tensors = torch.stack(tensor_list).to(device)
             
-        # Convert moves to tensors with current player
-        move_tensors = torch.stack([
-            board_to_tensor(move[0], move[1], current_player)
-            for move in moves
-        ])
-        
-        # Choose move using epsilon-greedy strategy
-        if np.random.rand() < epsilon:
-            chosen_idx = np.random.choice(len(moves))
+            # Choose move using epsilon-greedy strategy
+            if np.random.rand() < epsilon:
+                chosen_idx = np.random.choice(len(moves))
+            else:
+                with torch.no_grad():
+                    values = model(move_tensors)
+                    chosen_idx = values.argmax().item()
+            
+            # Apply the chosen move
+            currentBoardNode = moves[chosen_idx]
+            tensorhistory.append((move_tensors[chosen_idx], current_player))
+            boardHistory.append(currentBoardNode)
+
         else:
-            with torch.no_grad():
-                values = model(move_tensors)
-                chosen_idx = values.argmax().item()
-        
-        # Apply the chosen move
-        new_red, new_white = moves[chosen_idx]
-        history.append((move_tensors[chosen_idx], current_player))
-        
-        # Check termination conditions
-        state_hash = str((new_red, new_white))
-        if is_terminal(new_red, new_white):
-            winner = current_player
+            currentBoardNode.setTerminal()
+
+        if currentBoardNode.is_terminal():
+            winner = Piece.WHITE if current_player == Piece.RED else Piece.RED
             break
-        if is_draw_by_repetition(state_hash, state_counter):
+        if is_draw_by_repetition(currentBoardNode, state_counter):
             winner = "draw"
             break
             
-        red_pieces, white_pieces = new_red, new_white
-        current_player = "white" if current_player == "red" else "red"
-    
-    return history, winner
+        current_player = Piece.WHITE if current_player == Piece.RED else Piece.RED
+        turn_counter += 1
+        print("winner: ", winner)
+
+
+    return tensorhistory, winner
 
 # 4. Training and Experience Replay
 
@@ -130,6 +143,7 @@ def train(model, episodes=1000, batch_size=32):
     
     for episode in range(episodes):
         # Generate game data
+        print(f"Episode {episode + 1}/{episodes}")
         game_history, winner = play_game(model, epsilon)
         states = torch.stack([s for s, _ in game_history])
         targets = torch.tensor([
@@ -161,12 +175,12 @@ def train(model, episodes=1000, batch_size=32):
     
     return model
 
-if __name__ == "__main__":
-    # Initialize model and train
-    model = CheckersNet()
-    trained_model = train(model, episodes=1000)
+# if __name__ == "__main__":
+#     # Initialize model and train
+#     model = CheckersNet()
+#     trained_model = train(model, episodes=1000)
     
-    # Save final model
-    torch.save(trained_model.state_dict(), "checkers_final.pth")
+#     # Save final model
+#     torch.save(trained_model.state_dict(), "checkers_final.pth")
 
-    #des line 70 xreiazomai to findPossibleMoves kai line 96 na checkarw pote teleiwnei to game
+#     #des line 70 xreiazomai to findPossibleMoves kai line 96 na checkarw pote teleiwnei to game
