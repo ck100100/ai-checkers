@@ -85,7 +85,7 @@ class BoardNode:
             if moved_piece in new_board_state.red_pieces:
                 new_board_state.red_pieces.remove(moved_piece)
                 new_board_state.red_pieces.append(Pawn(new_row, new_col, moved_piece.is_king))
-            else:
+            elif moved_piece in new_board_state.white_pieces:
                 new_board_state.white_pieces.remove(moved_piece)
                 new_board_state.white_pieces.append(Pawn(new_row, new_col, moved_piece.is_king))
 

@@ -28,7 +28,7 @@ class CheckersNet(nn.Module):
 
 # 2. Game State Utilities
 
-def board_to_tensor(red_pieces, white_pieces, current_player):
+def board_to_tensor(red_pieces, white_pieces, current_player, device):
     """Create 5-channel tensor from board state"""
     tensor = torch.zeros(5, 8, 8)
     
@@ -61,21 +61,21 @@ def is_draw_by_repetition(state, state_counter, threshold=3):
 
 # 3. Self-Play
 
-def play_game(model, epsilon=0.1, device):
+def play_game(model, device, epsilon=0.1):
     """Generate a game through self-play"""
     # Initialize game state
     # red_pieces = [(x, y, False) for x in range(3) for y in range(8) if (x + y) % 2 == 1]
     # white_pieces = [(x, y, False) for x in range(5, 8) for y in range(8) if (x + y) % 2 == 1]
     startingBoardState = BoardState(None, None, Piece.RED)
     currentBoardNode = BoardNode(startingBoardState, Piece.RED)
-    current_player = Piece.RED
+    current_player = Piece.WHITE
     tensorhistory = []
     boardHistory = []
     state_counter = defaultdict(int)
     turn_counter = 1
     
     while True:
-        #print("turn: ", turn_counter)
+        print("turn: ", turn_counter)
         moves = currentBoardNode.findPossibleMoves(move_for = current_player)
         tensor_list = []
         if moves:
@@ -83,7 +83,7 @@ def play_game(model, epsilon=0.1, device):
             for move in moves:
                 red_pieces = move.getBoardState().red_pieces
                 white_pieces = move.getBoardState().white_pieces
-                tensor = board_to_tensor(red_pieces, white_pieces, current_player)
+                tensor = board_to_tensor(red_pieces, white_pieces, current_player, device)
                 tensor_list.append(tensor)
             #tensor batch
             move_tensors = torch.stack(tensor_list).to(device)
@@ -113,8 +113,8 @@ def play_game(model, epsilon=0.1, device):
             
         current_player = Piece.WHITE if current_player == Piece.RED else Piece.RED
         turn_counter += 1
-        print("winner: ", winner)
-
+    
+    print("winner: ", winner)
 
     return tensorhistory, winner
 
@@ -131,10 +131,8 @@ class ExperienceReplay:
         indices = np.random.choice(len(self.buffer), batch_size, replace=False)
         return [self.buffer[i] for i in indices]
 
-def train(model, episodes=1000, batch_size=32):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+def train(model, device, episodes=1000, batch_size=32):
     model = model.to(device)
-    
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     replay = ExperienceReplay()
     epsilon = 1.0
@@ -144,12 +142,12 @@ def train(model, episodes=1000, batch_size=32):
     for episode in range(episodes):
         # Generate game data
         print(f"Episode {episode + 1}/{episodes}")
-        game_history, winner = play_game(model, epsilon)
+        game_history, winner = play_game(model, device, epsilon)
         states = torch.stack([s for s, _ in game_history])
         targets = torch.tensor([
             1.0 if p == winner else (-1.0 if winner != "draw" else 0.0)
             for _, p in game_history
-        ], dtype=torch.float32)
+        ], dtype=torch.float32).to(device)
         
         # Store experience
         replay.add(states, targets)
