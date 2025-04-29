@@ -1,96 +1,172 @@
-# Καλημερες. νομιζω ειμαστε στην τελικη ευθεια και πρεπει να φτιαξουμε το reinforcement learning neural network asap.
-# Κατω γραφω σε γενικες γραμμες σε abstract μορφη μια κλαση BotML εχω links για καθε τι που χρειαζεστε για να καταλαβετε τι γινεται,
-# η που πρεπει να κανω περισσοτερο research
-
-#προτεινω να χρησιμοποιησουμε pytorch επειδη ειναι η πιο γνωστη βιβλιοθηκη για το reinforcement learning και εχει πολυ καλη υποστηριξη απο την κοινοτητα
-
-# Τι θαα κανουμε σε γενικες γραμμες: 
-# 1. τα δεδομενα μας θα τα μετατρεψουμε σε tensors (ειναι ενα data structure που χρησιμοποιει το pytorch για να κανει υπολογισμους με GPU)
-# 2. θα φτιαξουμε ενα neural network το οποιο θα εχει 3 (?, 3 το λιγοτερο) layers (input, hidden, output). Θα βαζουμε τενσορα boardstate και θα μας επιστρεφει κινηση (εμβαθυνω αργοτερα)
-# 3. θα βαλουμε τα nn μας να παιζουν μεταξυ τους. αυτο που θα κερδιζει θα το επιβραβευουμε και αυτο που θα χανει θα το τιμωρουμε.
-# 4. μετα απο αρκετα iterations θα μπορει να κανει evaluate ta boards με αρκετη ακριβεια και να παιζει καλα.
-
-# γιια να εχετε μια εικονα τι θα εξηγησω μετα
-#https://raw.githubusercontent.com/mrdbourke/pytorch-deep-learning/main/images/01_a_pytorch_workflow.png
-
-
-import numpy as np #κλασικα
-import random
-from abc import ABC, abstractmethod
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim #με την σειρα εχουμε το pytorch, pytorch για newral network, functional για να χρησιμοποιησουμε τις συναρτησεις 
-                            #του pytorch (loss functions κλπ) και το optim για να κανουμε optimization στο neural network μας. εμβαθυνω αργοτερα
+import numpy as np
+from collections import deque, defaultdict
+from .BoardNode import BoardNode
 
-class BotML(ABC):
 
-    @abstractmethod
-    def board_to_tensors(self):
-        # εδω θα μετατρεψουμε το board σε tensor
-        # εχει λιγη κουβεντα εδω να αποφασισουμε τι θελουμε να ταιζουμε στο bot μας
-        # 
-        # θελουμε να του δινουμε το board state και να μας επιστρεφει την κινηση που θα κανει στυλ (1,1,2,2) που θα σημαινει κουνα το πιονι που βρισκεται στο 1,1 στο 2,2?
-        # αυτο θα μας ταλαιπωρησει στο training αρα δεν το συνηστω
-        # 
-        # θελουμε να του δινουμε ολες τις πιθανες κινησεις ταυτοχρονα και να μας λεει ποια του αρεσει περισσοτερο? 
-        # δηλαδη θα του δινουμε τα children του boardnode μας (πχ 4 children/κινησεις) και θα μας επιστρεφει (0.02,0.1,0.2,0.58) (αθροιζουν 1), αρα ειναι 58% σιγουρο οτι η τεταρτη κινηση ειναι η καλυτερη
-        # αυτο θα μας ταλαιπωρησει στα nodes μας επειδη δεν ξερω ακομα πως θα δομουσα κατι τετοιο
+# 1. Neural Network Architecture
 
-        # το πιο πιθανο που βλεπω να κανουμε ειναι να του δινουμε μια μια τις κινησεις και να μας λεει αν του αρεσει η οχι
-        # δηλαδη του δινουμε ενα ενα τα children και παιρνουμε ενα νουμερακι για το καθενα (0.2) (0.84) (0.45) (0.02), αρα προτιμαται το δευτερο child απο τις πιθανες κινησεις
-        # αυτο ειναι καττα την γνωμη μου πιο ευκολο και δεν θα μας ταλαιπωρησει τοσο πολυ στο training
-        pass
-
-    @abstractmethod
+class CheckersNet(nn.Module):
     def __init__(self):
-        pass
+        super().__init__()
+        self.conv1 = nn.Conv2d(5, 16, kernel_size=3, padding=1)  # 5 input channels
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, padding=1)
+        self.fc1 = nn.Linear(32 * 8 * 8, 128)
+        self.fc2 = nn.Linear(128, 1)
 
-    # (εβαλα την init πιο κατω για να εχει ροη το κειμενο που γραφω τωρα)
-    # ηρθε η ωρα να συζητησουμε την δομη του νευρωνικου δικτυου.
-    # αν αποφασισουμε στο τελευταιο (στο να δινουμε μια μια τις κινησεις) περιμενουμε ενα νουμερο σαν αποτελεσμα, αρα χρειαζομαστε ενα output node
-    # για εισοδους προτεινω 4, θα εχουμε 4 tensors (enemy pieces, enemy kings, our pieces, our kings) και το νν μας θα τα επεξεργαζεται στα hidden layers του
-    # τον τυπο των layers θα τον κανω περισσοτερο research. αν θα ειναι linear, conv2d η κατι αλλο
+    def forward(self, x):
+        x = F.relu(self.conv1(x))  # (batch, 16, 8, 8)
+        x = F.relu(self.conv2(x))  # (batch, 32, 8, 8)
+        x = x.view(x.size(0), -1)  # (batch, 32*8*8)
+        x = F.relu(self.fc1(x))    # (batch, 128)
+        return torch.tanh(self.fc2(x))  # (batch, 1)
+
+# 2. Game State Utilities
+
+def board_to_tensor(red_pieces, white_pieces, current_player):
+    """Create 5-channel tensor from board state"""
+    tensor = torch.zeros(5, 8, 8)
     
-    # newral network diagram να το εχετε λιγο εικονα
-    #https://www.researchgate.net/publication/323312622/figure/fig3/AS:645600408256513@1530934540411/Workflow-diagram-of-the-artificial-neural-network-algorithm-developed-by-Lancashire-et.png
-
-    #documentation για layer types
-    # https://pytorch.org/docs/stable/nn.html#linear-layers
-    # https://pytorch.org/docs/stable/nn.html#convolution-layers
-
-
-    ## ωραια, καναμε το board tensors, το βαλαμε στο nn μας και μας επεστρεψε ενα νουμερο
-    # αυτο το νουμερο δεν εχει κανενα νοημα επειδη βγηκε τυχαια, πρεπει να το εκπαιδευσουμε
-
-    # δεν εχουμε data, θα φτιαξουμε δικα μας μεσω του training model μας
+    # Red pieces (channel 0) and kings (channel 1)
+    for x, y, is_king in red_pieces:
+        tensor[0, x, y] = 1
+        if is_king:
+            tensor[1, x, y] = 1
     
-    @abstractmethod
-    def train(model, optimizer, episodes=1000):
-        pass
-
-    #ποιο θα ειναι το loop:
-    # για 1000 φορες: παιξε ενα παιχνιδι με τον εαυτο σου (πιθανον να καλει συναρτηση self_play_game)
-    # θα επιλεγει κινησεις μεχρι μια πλευρα να χασει μια να κερδισει. Οι κινησεις θα αποθηκευονται σε δυο arrays
-    # οι κινησεις του χαμενου μαρκαρονται ως μη επιθυμητες (negative reward) και οι κινησεις του νικητη ως επιθυμητες (positive reward), ισοπαλιες δεν κερδιζει κανενας
-    # συγχαρητηρια, φτιαξαμε το πρωτο μας loss function (εχασες κερδισες το παιχνιδι) και κατα προεκταση training set (κινησεις που κατεληξαν σε νικη η ηττα)
-
-    # χρειαζομαστε και ενα optimizer για να κανουμε update τα weights του νευρωνικου δικτυου μας 
-    # optimizer θα χρησιμοποιησουμε τα built in του pytorch, λογικα το adam. θελω παραπανω research 
-    # https://pytorch.org/docs/stable/optim.html#algorithms
-
-
-    # αυτα ειναι τα must have methods. τωρα μπορει να εμφανιστουν εξτρα οπως το self play game, ετσι και ενα get_move αφου το κανουμε train
-
-    # GAME PLAN:
-    #κυριακη επιστρεφω πατρα, βαζω dualboot linux στο pc για να μπορω να χρησιμοποιησω την καρτα γραφικων μου (θενξ windows και amd)
-    # δευτερα πρωι ψαχνω τα σημεια που ειπα οτι θελουν παραπανω research μεχρι να παω για ενα εργαστηριο που εχω
-    # δευτερα απογευμα αρχιζω να φτιαχνω το νευρωνικο δικτυο και αν πανε ολα καλα να το εκπαιδευω
-    # τριτη δεν θα πατησω σχολη να κανω complete & debug γενικα.
-    # τεταρτη εχουμε μια μερα ξτρα αν δεν πανε ολα οσο μελι γαλα οσο τα περιγραφω πανω.
+    # White pieces (channel 2) and kings (channel 3)
+    for x, y, is_king in white_pieces:
+        tensor[2, x, y] = 1
+        if is_king:
+            tensor[3, x, y] = 1
     
-    # θα βγει το πιστευω. παω για παρτι :)
+    # Turn channel (channel 4)
+    tensor[4] = 1.0 if current_player == "red" else 0.0
+    
+    return tensor
 
-    #που τα μελετησα ολα αυτα κυριως (μπορειτε να βρειτε μικροτερα τουτοριαλς εσεις):
-    #https://youtu.be/LyJtbe__2i0?si=byvjFt4tNeSrrXRA
+def is_draw_by_repetition(state_hash, state_counter, threshold=3):
+    """Check for repeated board states"""
+    state_counter[state_hash] += 1
+    return state_counter[state_hash] >= threshold
+
+
+# 3. Self-Play
+
+def play_game(model, epsilon=0.1):
+    """Generate a game through self-play"""
+    # Initialize game state
+    red_pieces = [(x, y, False) for x in range(3) for y in range(8) if (x + y) % 2 == 1]
+    white_pieces = [(x, y, False) for x in range(5, 8) for y in range(8) if (x + y) % 2 == 1]
+    current_player = "red"
+    history = []
+    state_counter = defaultdict(int)
+
+    BoardNode()
+    
+    while True:
+        # Generate all legal moves (implement your move generator)
+        moves = generate_legal_moves(red_pieces, white_pieces, current_player)
+        
+        if not moves:
+            winner = "white" if current_player == "red" else "red"
+            break
+            
+        # Convert moves to tensors with current player
+        move_tensors = torch.stack([
+            board_to_tensor(move[0], move[1], current_player)
+            for move in moves
+        ])
+        
+        # Choose move using epsilon-greedy strategy
+        if np.random.rand() < epsilon:
+            chosen_idx = np.random.choice(len(moves))
+        else:
+            with torch.no_grad():
+                values = model(move_tensors)
+                chosen_idx = values.argmax().item()
+        
+        # Apply the chosen move
+        new_red, new_white = moves[chosen_idx]
+        history.append((move_tensors[chosen_idx], current_player))
+        
+        # Check termination conditions
+        state_hash = str((new_red, new_white))
+        if is_terminal(new_red, new_white):
+            winner = current_player
+            break
+        if is_draw_by_repetition(state_hash, state_counter):
+            winner = "draw"
+            break
+            
+        red_pieces, white_pieces = new_red, new_white
+        current_player = "white" if current_player == "red" else "red"
+    
+    return history, winner
+
+# 4. Training and Experience Replay
+
+class ExperienceReplay:
+    def __init__(self, capacity=10000):
+        self.buffer = deque(maxlen=capacity)
+    
+    def add(self, states, targets):
+        self.buffer.extend(zip(states, targets))
+    
+    def sample(self, batch_size):
+        indices = np.random.choice(len(self.buffer), batch_size, replace=False)
+        return [self.buffer[i] for i in indices]
+
+def train(model, episodes=1000, batch_size=32):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
+    
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    replay = ExperienceReplay()
+    epsilon = 1.0
+    min_epsilon = 0.01
+    epsilon_decay = 0.995
+    
+    for episode in range(episodes):
+        # Generate game data
+        game_history, winner = play_game(model, epsilon)
+        states = torch.stack([s for s, _ in game_history])
+        targets = torch.tensor([
+            1.0 if p == winner else (-1.0 if winner != "draw" else 0.0)
+            for _, p in game_history
+        ], dtype=torch.float32)
+        
+        # Store experience
+        replay.add(states, targets)
+        
+        # Training phase
+        if len(replay.buffer) >= batch_size:
+            batch = replay.sample(batch_size)
+            batch_states = torch.stack([s for s, _ in batch]).to(device)
+            batch_targets = torch.stack([t for _, t in batch]).to(device)
+            
+            optimizer.zero_grad()
+            predictions = model(batch_states).squeeze()
+            loss = F.mse_loss(predictions, batch_targets)
+            loss.backward()
+            optimizer.step()
+        
+        # Decay exploration
+        epsilon = max(epsilon * epsilon_decay, min_epsilon)
+        
+        # Save checkpoint
+        if episode % 100 == 0:
+            torch.save(model.state_dict(), f"checkers_{episode}.pth")
+    
+    return model
+
+if __name__ == "__main__":
+    # Initialize model and train
+    model = CheckersNet()
+    trained_model = train(model, episodes=1000)
+    
+    # Save final model
+    torch.save(trained_model.state_dict(), "checkers_final.pth")
+
+    #des line 70 xreiazomai to findPossibleMoves kai line 96 na checkarw pote teleiwnei to game
