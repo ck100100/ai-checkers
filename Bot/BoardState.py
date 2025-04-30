@@ -70,7 +70,7 @@ class BoardState:
     
     def __eq__(self, otherObject):
         if(isinstance(otherObject, BoardState) == False):
-            raise Exception("Cant compare objects that have different types")
+            return False
 
         otherBoardState:BoardState = otherObject
         isEqualBoardState:bool = self.__comparePawnArrays(self.red_pieces, otherBoardState.red_pieces) and self.__comparePawnArrays(self.white_pieces, otherBoardState.white_pieces)

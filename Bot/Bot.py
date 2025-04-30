@@ -27,11 +27,7 @@ class Bot(ABC):
         pass
 
     @abstractmethod
-    def setOpponentMove(self, prevCoordinates:Coordinates, newCoordinates:Coordinates) -> None:
-        pass
-
-    @abstractmethod
-    def getBotMove(self):
+    def getBotMove(self, move:BoardState):
         pass
 
 class BotMinMaxAB(Bot):
@@ -83,15 +79,24 @@ class BotMinMaxAB(Bot):
         self.updateEvaluations()
 
 
-    def getBotMove(self) -> BoardState:
+    def getBotMove(self, move:BoardState):
         print("reminder that depth checking is set to: ", self.__depthChecking)
         """
         This will be used to ask the bot what the next move will be.
         here we will have to execute the min-max algorithm and do
         alpha beta pruning in order to achieve this.
         """
-        if(self.__currentTurn == False):
-            raise Exception("Can only make a move when it is the bot's move")
+        self.updateEvaluations()
+        if move != None:
+            print(self.__parentNode.board_state)
+            child = self.__parentNode.getChildNode(move)
+            if child.is_terminal() == True:
+                return None
+            self.__parentNode = child
+
+            self.__currentTurn = True
+
+        print(self.__parentNode.board_state)
 
         maxScore = -INF
         maxScoringChild:BoardNode         
@@ -112,7 +117,7 @@ class BotMinMaxAB(Bot):
                 raise Exception("Bot could not find valid move.")          
         self.__parentNode = maxScoringChild
         self.__currentTurn = False
-        return maxScoringChild.board_state
+        return self.__parentNode.board_state
 
 
     def updateEvaluations(self) -> None:

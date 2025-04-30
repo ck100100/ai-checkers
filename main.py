@@ -10,6 +10,7 @@ from Bot.BoardState import BoardState
 from Bot.Pawn import Pawn
 from Bot.GameInterface import GameInterface
 from Bot.Bot import BotMinMaxAB
+from utils.types import Piece
 
 # looks like a Node class method. could be moved there
 def initialize_starting_positions():
@@ -38,13 +39,21 @@ def play_random_game(node, move_for=0):
         node = random.choice(children)
         moves_made.append(node)
         move_for = 1 - move_for
-    return node, moves_made
-
-    
+    return node, moves_made    
 
 if __name__ == "__main__":
     # main()
-    GameInterface()
+    # GameInterface()
+    bot1 = BotMinMaxAB(Piece.RED, 3)
+    bot2 = BotMinMaxAB(Piece.WHITE, 3)
 
+    gameEnded:bool = False
+    move = bot1.getBotMove(None)
+    while not gameEnded:
 
-
+        if move == None:
+            gameEnded = True
+        move = bot2.getBotMove(move)
+        if move == None:
+            gameEnded = True
+        move = bot1.getBotMove(move)
