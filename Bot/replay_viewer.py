@@ -109,7 +109,8 @@ class ReplayHandler:
             f"WHITE's Pieces: {len(current_state.white_pieces)}",
             f"RED's Kings: {sum(p.is_king for p in current_state.red_pieces)}",
             f"WHITE's Kings: {sum(p.is_king for p in current_state.white_pieces)}",
-            f"Turn: {'WHITE' if self.current_move % 2 else 'RED'}"
+            f"Turn: {'WHITE' if self.current_move % 2 else 'RED'}",
+            f"Turn: {current_node.getTurnNumber()}"
         ]
 
         for i, text in enumerate(texts):
