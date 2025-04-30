@@ -44,8 +44,8 @@ def play_random_game(node, move_for=0):
 if __name__ == "__main__":
     # main()
     # GameInterface()
-    bot1 = BotMinMaxAB(Piece.RED, 3)
-    bot2 = BotMinMaxAB(Piece.WHITE, 3)
+    bot1 = BotMinMaxAB(Piece.RED, 4)
+    bot2 = BotMinMaxAB(Piece.WHITE, 4)
 
     gameEnded:bool = False
     move = bot1.getBotMove(None)
@@ -54,9 +54,15 @@ if __name__ == "__main__":
 
         if move == None:
             gameEnded = True
+        else:
+            move.children = []
+            stateHistory.append(move)
+
         move = bot2.getBotMove(move)
-        stateHistory.append(move)
         if move == None:
             gameEnded = True
+        else:
+            move.children = []
+            stateHistory.append(move)
+            
         move = bot1.getBotMove(move)
-        stateHistory.append(move)
