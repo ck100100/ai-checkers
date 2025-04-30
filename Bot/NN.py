@@ -109,7 +109,7 @@ def play_game(model, device, epsilon=0.1):
         if currentBoardNode.is_terminal():
             winner = Piece.WHITE if current_player == Piece.RED else Piece.RED
             break
-        if turn_counter >=3000:
+        if turn_counter >=1000:
             if currentBoardNode.calculate_material() > 0:
                 winner = Piece.RED
             elif currentBoardNode.calculate_material() < 0:
@@ -157,7 +157,7 @@ def train(model, device, episodes=1000, batch_size=32):
         game_history, winner, boardHistory = play_game(model, device, epsilon)
         states = torch.stack([s for s, _ in game_history])
         targets = torch.tensor([
-            1.0 if p == winner else (-1.0 if winner != "draw" else -0.2)
+            1.0 if p == winner else (-1.0 if winner != "draw" else -0.3)
             for _, p in game_history
         ], dtype=torch.float32).to(device)
         

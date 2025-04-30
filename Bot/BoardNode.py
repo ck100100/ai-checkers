@@ -274,3 +274,4 @@ class BoardNode:
     
     def getTurnNumber(self) -> int:
         return self.turnNumber
+    
