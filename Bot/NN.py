@@ -109,7 +109,7 @@ def play_game(model, device, epsilon=0.1):
         if currentBoardNode.is_terminal():
             winner = Piece.WHITE if current_player == Piece.RED else Piece.RED
             break
-        if turn_counter >=5000:
+        if turn_counter >=3000:
             if currentBoardNode.calculate_material() > 0:
                 winner = Piece.RED
             elif currentBoardNode.calculate_material() < 0:
@@ -157,7 +157,7 @@ def train(model, device, episodes=1000, batch_size=32):
         game_history, winner, boardHistory = play_game(model, device, epsilon)
         states = torch.stack([s for s, _ in game_history])
         targets = torch.tensor([
-            1.0 if p == winner else (-1.0 if winner != "draw" else 0.0)
+            1.0 if p == winner else (-1.0 if winner != "draw" else -0.2)
             for _, p in game_history
         ], dtype=torch.float32).to(device)
         
@@ -192,7 +192,21 @@ class NNBot:
     def __init__(self, model_path="checkers_final.pth", device=None):
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.model = CheckersNet().to(self.device)
-        self.model.load_state_dict(torch.load(model_path, map_location=self.device))
+        
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        
+        # Construct the full path to the model file
+        full_model_path = os.path.join(script_dir, model_path)
+
+        try:
+            self.model.load_state_dict(torch.load(full_model_path, map_location=self.device))
+            print(f"Successfully loaded model from: {full_model_path}")
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Model file not found at: {full_model_path}")
+        except Exception as e:
+            raise RuntimeError(f"Error loading model: {str(e)}")
+            
+
         self.model.eval()  # Set model to evaluation mode
 
     def getBotMove(self, boardNode):
