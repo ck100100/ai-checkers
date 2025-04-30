@@ -46,7 +46,7 @@ if __name__ == "__main__":
             stateHistory.append(move)
         if move == None or turn_counter > 1000:
             gameEnded = True
-        break
+
 
     print("Game ended after ", turn_counter, " turns")
     replay_handler = ReplayHandler(stateHistory)
