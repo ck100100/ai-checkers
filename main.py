@@ -1,7 +1,3 @@
-# we are definitely not using a main like that
-# this serves as a dump for functions that could be in main or a future bot of ours
-# also showcases the replay viewer
-
 
 import random
 from Bot.replay_viewer import ReplayHandler
@@ -17,11 +13,11 @@ from Bot.NN import NNBot
 
 if __name__ == "__main__":
     # minmax opponents
-    #bot1 = BotMinMaxAB(Piece.RED, 3)
+    bot1 = BotMinMaxAB(Piece.RED, 3)
     #bot2 = BotMinMaxAB(Piece.WHITE, 5)
 
     # nn opponents you can also set the nn's data path
-    bot1 = NNBot(Piece.RED) 
+    # bot1 = NNBot(Piece.RED) 
     bot2 = NNBot(Piece.WHITE)
 
     turn_counter = 1
