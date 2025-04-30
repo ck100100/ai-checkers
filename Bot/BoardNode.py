@@ -42,7 +42,7 @@ class BoardNode:
     def getChildren (self):
         return self.children  
     
-    def getChildNode(self, prevCoordinates:Coordinates, newCoordinates:Coordinates, player:Player):
+    def getChildNodeByMove(self, prevCoordinates:Coordinates, newCoordinates:Coordinates, player:Player):
         nextBoardState = self.board_state.copy()
         nextBoardState.makeMove(prevCoordinates, newCoordinates)
         found:bool = False
@@ -60,6 +60,24 @@ class BoardNode:
             raise Exception("This move is not possible!")
         
         return currentChild
+
+    def getChildNode(self, desiredState:BoardState):
+        i = 0
+        found = False
+        child:'BoardNode' = None
+        while i < len(self.children) and not found:
+            print("NODE")
+            child = self.children[i]
+            print(child.board_state)
+            if child.board_state == desiredState:
+                found = True
+            else:
+                i += 1
+
+        if found:
+            return child
+        else:
+            raise Exception("This child does not exist!")
 
 
     def __str__(self):
