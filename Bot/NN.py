@@ -6,7 +6,7 @@ from collections import deque, defaultdict
 from .BoardNode import BoardNode
 from .BoardState import BoardState
 
-from utils.types import Coordinates, Piece
+from utils.types import Coordinates, Piece, Player
 import os
 
 
@@ -67,9 +67,9 @@ def play_game(model, device, epsilon=0.1):
     # Initialize game state
     # red_pieces = [(x, y, False) for x in range(3) for y in range(8) if (x + y) % 2 == 1]
     # white_pieces = [(x, y, False) for x in range(5, 8) for y in range(8) if (x + y) % 2 == 1]
-    startingBoardState = BoardState(None, None, Piece.RED)
-    currentBoardNode = BoardNode(startingBoardState, Piece.RED)
-    current_player = Piece.WHITE
+    startingBoardState = BoardState(None, None, Piece.WHITE)
+    currentBoardNode = BoardNode(startingBoardState, Piece.WHITE)
+    current_player = Piece.RED
     tensorhistory = []
     boardHistory = []
     state_counter = defaultdict(int)
@@ -193,6 +193,7 @@ class NNBot:
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.model = CheckersNet().to(self.device)
         self.player = player
+        self.firstMoveMade = False
         
         script_dir = os.path.dirname(os.path.abspath(__file__))
         print(f"Script directory: {script_dir}")
@@ -213,14 +214,15 @@ class NNBot:
         self.model.eval()  # Set model to evaluation mode
 
     def getBotMove(self, boardNode):
-
         current_player = self.player
         if boardNode == None:
             firstBoardState = BoardState(None, None, current_player)
             boardNode = BoardNode(firstBoardState, current_player)
+        else:
+            boardNode.botPieces = self.player
 
 
-        possible_moves = boardNode.findPossibleMoves(move_for=current_player)
+        possible_moves = boardNode.findPossibleMoves(move_for=Player.YOU)
         
         if not possible_moves:
             return None  # No moves available

@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import sys
+import copy
 from .BoardState import BoardState
 from .Pawn import Pawn
 from utils.types import Coordinates, Piece, Player
@@ -118,7 +119,7 @@ class BotMinMaxAB(Bot):
         self.__parentNode = maxScoringChild
         self.__parentNode.parent = None
         self.__currentTurn = False
-        return self.__parentNode
+        return copy.deepcopy(self.__parentNode)
 
 
     def updateEvaluations(self) -> None:
