@@ -7,6 +7,7 @@ from .BoardNode import BoardNode
 from .BoardState import BoardState
 
 from utils.types import Coordinates, Piece
+import os
 
 
 # 1. Neural Network Architecture
@@ -53,10 +54,10 @@ def board_to_tensor(red_pieces, white_pieces, current_player, device):
     
     return tensor
 
-def is_draw_by_repetition(state, state_counter, threshold=3):
-    """Check for repeated board states"""
-    state_counter[state] += 1
-    return state_counter[state] >= threshold
+# def is_draw_by_repetition(state, state_counter, threshold=3):
+#     """Check for repeated board states"""
+#     state_counter[state] += 1
+#     return state_counter[state] >= threshold
 
 
 # 3. Self-Play
@@ -75,7 +76,8 @@ def play_game(model, device, epsilon=0.1):
     turn_counter = 1
     
     while True:
-        print("turn: ", turn_counter)
+        if turn_counter % 1000 == 0:
+            print("turn: ", turn_counter)
         moves = currentBoardNode.findPossibleMoves(move_for = current_player)
         tensor_list = []
         if moves:
@@ -107,8 +109,13 @@ def play_game(model, device, epsilon=0.1):
         if currentBoardNode.is_terminal():
             winner = Piece.WHITE if current_player == Piece.RED else Piece.RED
             break
-        if is_draw_by_repetition(currentBoardNode, state_counter):
-            winner = "draw"
+        if turn_counter >=5000:
+            if currentBoardNode.calculate_material() > 0:
+                winner = Piece.RED
+            elif currentBoardNode.calculate_material() < 0:
+                winner = Piece.WHITE
+            else:
+                winner = "draw"
             break
             
         current_player = Piece.WHITE if current_player == Piece.RED else Piece.RED
@@ -116,7 +123,7 @@ def play_game(model, device, epsilon=0.1):
     
     print("winner: ", winner)
 
-    return tensorhistory, winner
+    return tensorhistory, winner, boardHistory
 
 # 4. Training and Experience Replay
 
@@ -138,11 +145,16 @@ def train(model, device, episodes=1000, batch_size=32):
     epsilon = 1.0
     min_epsilon = 0.01
     epsilon_decay = 0.995
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    save_dir = os.path.join(script_dir, "training_data")
+
+    os.makedirs(save_dir, exist_ok=True)
     
     for episode in range(episodes):
         # Generate game data
         print(f"Episode {episode + 1}/{episodes}")
-        game_history, winner = play_game(model, device, epsilon)
+        game_history, winner, boardHistory = play_game(model, device, epsilon)
         states = torch.stack([s for s, _ in game_history])
         targets = torch.tensor([
             1.0 if p == winner else (-1.0 if winner != "draw" else 0.0)
@@ -169,16 +181,58 @@ def train(model, device, episodes=1000, batch_size=32):
         
         # Save checkpoint
         if episode % 100 == 0:
-            torch.save(model.state_dict(), f"checkers_{episode}.pth")
+            save_path = os.path.join(save_dir, f"checkers_{episode}.pth")
+            torch.save(model.state_dict(), save_path)
+
     
-    return model
+    return model, boardHistory
+
+
+class NNBot:
+    def __init__(self, model_path="checkers_final.pth", device=None):
+        self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+        self.model = CheckersNet().to(self.device)
+        self.model.load_state_dict(torch.load(model_path, map_location=self.device))
+        self.model.eval()  # Set model to evaluation mode
+
+    def getBotMove(self, boardNode):
+        current_player = boardNode.getBoardState().current_player
+        possible_moves = boardNode.findPossibleMoves(move_for=current_player)
+        
+        if not possible_moves:
+            return None  # No moves available
+
+        move_tensors = []
+        for move in possible_moves:
+            red_pieces = move.getBoardState().red_pieces
+            white_pieces = move.getBoardState().white_pieces
+            tensor = board_to_tensor(red_pieces, white_pieces, current_player, self.device)
+            move_tensors.append(tensor)
+
+        move_batch = torch.stack(move_tensors).to(self.device)
+
+        with torch.no_grad():
+            scores = self.model(move_batch)
+            best_idx = torch.argmax(scores).item()
+
+        return possible_moves[best_idx]
+
+
+# def calculate_material(currentBoardNode):
+#     """Calculate material balance"""
+#     red_pieces = currentBoardNode.getBoardState().red_pieces
+#     white_pieces = currentBoardNode.getBoardState().white_pieces
+#     red_material = sum(1 if not piece.is_king else 2 for piece in red_pieces)
+#     white_material = sum(1 if not piece.is_king else 2 for piece in white_pieces)
+#     return red_material - white_material
+
+        
 
 # if __name__ == "__main__":
 #     # Initialize model and train
-#     model = CheckersNet()
-#     trained_model = train(model, episodes=1000)
-    
-#     # Save final model
-#     torch.save(trained_model.state_dict(), "checkers_final.pth")
 
-#     #des line 70 xreiazomai to findPossibleMoves kai line 96 na checkarw pote teleiwnei to game
+    
+#     startingBoardState = BoardState(None, None, Piece.RED)
+#     currentBoardNode = BoardNode(startingBoardState, Piece.RED)
+
+#     print(calculate_material(currentBoardNode))

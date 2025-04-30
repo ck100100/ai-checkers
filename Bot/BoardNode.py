@@ -242,3 +242,12 @@ class BoardNode:
     
     def setTerminal(self) -> None:
         self.__isTerminal = True
+
+    # a simpler function to calculate material balance used by nn
+    def calculate_material(self):
+        """Calculate material balance"""
+        red_pieces = self.getBoardState().red_pieces
+        white_pieces = self.getBoardState().white_pieces
+        red_material = sum(1 if not piece.is_king else 2 for piece in red_pieces)
+        white_material = sum(1 if not piece.is_king else 2 for piece in white_pieces)
+        return red_material - white_material

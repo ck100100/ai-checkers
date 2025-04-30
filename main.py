@@ -40,39 +40,6 @@ def play_random_game(node, move_for=0):
         move_for = 1 - move_for
     return node, moves_made
 
-# basic main that initializes everything and plays a random game
-def main():
-    # Initialize starting positions
-    print("i exist")
-    starting_red_pieces, starting_white_pieces = initialize_starting_positions()
-
-    # Create the initial BoardState
-    initial_board_state = BoardState(starting_red_pieces, starting_white_pieces)
-
-    # Create the root node
-    root_node = BoardNode(initial_board_state)
-    bot = BotMinMaxAB()
-    bot.initialiseState()
-    #Set the initial state of the bot to the root node
-    bot._BotMinMaxAB__parentNode = root_node
-    bot._BotMinMaxAB__currentTurn = True
-
-
-    # Play a random game
-    final_node, moves_made = play_random_game(root_node)
-    print("Final Node:")
-    print(final_node)
-    print("\nMoves Made:")
-    for i, move in enumerate(moves_made):
-        print(f"Move {i}: {move}")
-
-    # Initialize the replay handler
-    replayHandler = ReplayHandler(moves_made)
-    replayHandler.set_pruned_branches(bot.getPrunedBranches())
-
-    # Start the replay
-    replayHandler.start_replay()
-    #replayHandler.testing_function()
     
 
 if __name__ == "__main__":

@@ -37,13 +37,16 @@ pygame.display.set_caption('Checkers')
 FONT = pygame.font.SysFont('arial', 15)
 
 class ReplayHandler:
-    def __init__(self, replay_data):
+    def __init__(self, replay_data = None):
         self.replay_data = replay_data
         self.current_move = 0
         self.window = WINDOW
 
         self.replay_active = True
-        # self.start_replay()
+        if not self.replay_data:
+            self.waiting_screen()
+        else:
+            self.start_replay()
 
     def test_board(self):
         self.window.fill(black)
@@ -62,34 +65,33 @@ class ReplayHandler:
             for col in range(COLUMNS):
                 if (row + col) % 2 == 1:
                     pygame.draw.rect(self.window, red, (col * SQUARE_SIZE, row * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE))
-                    print(f"Drew red square at ({row}, {col})")  # Debugging
+                    # print(f"Drew red square at ({row}, {col})")  # Debugging
 
     def draw_pieces(self):
         if not self.replay_data:
             return  # Exit if no data
 
-        current_node = self.replay_data[self.current_move]
-        current_state = current_node.board_state
+        current_state = self.replay_data[self.current_move]
 
         # Draw red pieces
-        for piece in current_state.red_pieces:
+        for piece in current_state.getBoardState().red_pieces:
             x = piece.col * SQUARE_SIZE + SQUARE_SIZE // 2
             y = piece.row * SQUARE_SIZE + SQUARE_SIZE // 2
             pygame.draw.circle(self.window, gray, (x, y), 35)
             pygame.draw.circle(self.window, red, (x, y), 30)
             if piece.is_king:
                 pygame.draw.circle(self.window, gold, (x, y), 15)
-            print(f"Drew red piece at ({piece.row}, {piece.col})")  # Debugging
+            # print(f"Drew red piece at ({piece.row}, {piece.col})")  # Debugging
 
         # Draw white pieces
-        for piece in current_state.white_pieces:
+        for piece in current_state.getBoardState().white_pieces:
             x = piece.col * SQUARE_SIZE + SQUARE_SIZE // 2
             y = piece.row * SQUARE_SIZE + SQUARE_SIZE // 2
             pygame.draw.circle(self.window, gray, (x, y), 35)
             pygame.draw.circle(self.window, white, (x, y), 30)
             if piece.is_king:
                 pygame.draw.circle(self.window, gold, (x, y), 15)
-            print(f"Drew white piece at ({piece.row}, {piece.col})")  # Debugging
+            # print(f"Drew white piece at ({piece.row}, {piece.col})")  # Debugging
 
     def update(self):
         self.draw_board()
@@ -100,7 +102,7 @@ class ReplayHandler:
             return
 
         current_node = self.replay_data[self.current_move]
-        current_state = current_node.board_state
+        current_state = current_node.getBoardState()
 
         texts = [
             f"RED's Pieces: {len(current_state.red_pieces)}",
@@ -118,6 +120,9 @@ class ReplayHandler:
         clock = pygame.time.Clock()
         self.update()  # Initial draw
 
+        key_held = None  # Tracks which key is being held down
+        key_hold_timer = 0  # Timer to control the speed of scrolling
+
         while self.replay_active:
             clock.tick(FPS)
 
@@ -126,39 +131,66 @@ class ReplayHandler:
                     self.replay_active = False
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_RIGHT:
+                        key_held = pygame.K_RIGHT
                         self.current_move = min(self.current_move + 1, len(self.replay_data) - 1)
                         self.update()
                     elif event.key == pygame.K_LEFT:
+                        key_held = pygame.K_LEFT
                         self.current_move = max(self.current_move - 1, 0)
                         self.update()
+                    elif event.key == pygame.K_a:
+                        self.current_move = max(self.current_move - 1, 0)
+                        self.update()
+                    elif event.key == pygame.K_d:
+                        self.current_move = min(self.current_move + 1, len(self.replay_data) - 1)
+                        self.update()
+                elif event.type == pygame.KEYUP:
+                    if event.key in (pygame.K_RIGHT, pygame.K_LEFT):
+                        key_held = None
+
+            # Handle key hold for rapid scrolling
+            if key_held:
+                key_hold_timer += 1
+                if key_hold_timer >= FPS // 10:  # Adjust speed (e.g., 10 moves per second)
+                    if key_held == pygame.K_RIGHT:
+                        self.current_move = min(self.current_move + 1, len(self.replay_data) - 1)
+                    elif key_held == pygame.K_LEFT:
+                        self.current_move = max(self.current_move - 1, 0)
+                    self.update()
+                    key_hold_timer = 0  # Reset the timer
 
         pygame.quit()
 
-    def set_pruned_branches(self, pruned_branches):
-            self.pruned_branches = pruned_branches
+    def set_replay_data(self, replay_data):
+        self.replay_data = replay_data
 
-    def print_pruned_branches(self):
-        if not self.pruned_branches:
-            print("No pruned branches to display.")
-            return
-    
-        print("Pruned Branches:")
-        for parent, child in self.pruned_branches:
-            print(f"Parent Node: {parent}, Pruned Child Node: {child}")
 
-    def testing_function(self):
-        print(f"WHITE: {white}")  # Debug: Check the value of WHITE
-        print(f"RED: {red}")      # Debug: Check the value of RED
-        print(f"Window: {self.window}")  # Debug: Check if self.window is valid
+    def waiting_screen(self):
+        clock = pygame.time.Clock()
+        start_time = pygame.time.get_ticks()
 
-        self.window.fill(black)
-        pygame.draw.rect(self.window, red, (0, 0, 50, 50))  # (255, 0, 0) is red
-        pygame.display.update()
+        while not self.replay_data:
+            elapsed_time = (pygame.time.get_ticks() - start_time) // 1000
 
-        running = True
-        while running:
+            # Clear the screen
+            self.window.fill(black)
+
+            # Render and display the waiting text
+            waiting_text = FONT.render("Waiting for replay data...", True, white)
+            self.window.blit(waiting_text, (WIDTH // 2 - waiting_text.get_width() // 2, HEIGHT // 2 - waiting_text.get_height() // 2 - 20))
+
+            # Render and display the elapsed time
+            timer_text = FONT.render(f"Elapsed Time: {elapsed_time} seconds", True, white)
+            self.window.blit(timer_text, (WIDTH // 2 - timer_text.get_width() // 2, HEIGHT // 2 - timer_text.get_height() // 2 + 20))
+
+            # Update the display
+            pygame.display.update()
+
+            # Handle events
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    running = False
+                    pygame.quit()
+                    exit()
 
-        pygame.quit()
+            # Limit the frame rate
+            clock.tick(FPS)
