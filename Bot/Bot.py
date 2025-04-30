@@ -93,6 +93,7 @@ class BotMinMaxAB(Bot):
             if child.is_terminal() == True:
                 return None
             self.__parentNode = child
+            self.__parentNode.parent = None
 
             self.__currentTurn = True
 
@@ -115,6 +116,7 @@ class BotMinMaxAB(Bot):
             if maxScoringChild ==None:
                 raise Exception("Bot could not find valid move.")          
         self.__parentNode = maxScoringChild
+        self.__parentNode.parent = None
         self.__currentTurn = False
         return self.__parentNode
 
