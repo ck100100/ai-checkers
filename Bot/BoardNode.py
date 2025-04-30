@@ -66,9 +66,7 @@ class BoardNode:
         found = False
         child:'BoardNode' = None
         while i < len(self.children) and not found:
-            print("NODE")
             child = self.children[i]
-            print(child.board_state)
             if child.board_state == desiredState:
                 found = True
             else:

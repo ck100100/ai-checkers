@@ -49,11 +49,14 @@ if __name__ == "__main__":
 
     gameEnded:bool = False
     move = bot1.getBotMove(None)
+    stateHistory = [move]
     while not gameEnded:
 
         if move == None:
             gameEnded = True
         move = bot2.getBotMove(move)
+        stateHistory.append(move)
         if move == None:
             gameEnded = True
         move = bot1.getBotMove(move)
+        stateHistory.append(move)

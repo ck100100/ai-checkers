@@ -79,7 +79,7 @@ class BotMinMaxAB(Bot):
         self.updateEvaluations()
 
 
-    def getBotMove(self, move:BoardState):
+    def getBotMove(self, moveNode:BoardNode):
         print("reminder that depth checking is set to: ", self.__depthChecking)
         """
         This will be used to ask the bot what the next move will be.
@@ -87,16 +87,15 @@ class BotMinMaxAB(Bot):
         alpha beta pruning in order to achieve this.
         """
         self.updateEvaluations()
-        if move != None:
-            print(self.__parentNode.board_state)
-            child = self.__parentNode.getChildNode(move)
+        if moveNode != None:
+            moveState = moveNode.board_state
+            child = self.__parentNode.getChildNode(moveState)
             if child.is_terminal() == True:
                 return None
             self.__parentNode = child
 
             self.__currentTurn = True
 
-        print(self.__parentNode.board_state)
 
         maxScore = -INF
         maxScoringChild:BoardNode         
@@ -107,17 +106,17 @@ class BotMinMaxAB(Bot):
         possible_moves = sorted(possible_moves, key=lambda move: move.evaluatePosition(True), reverse=True) [:10]
         if(len(possible_moves) == 0):
             raise Exception("No moves available!")
-        for move in possible_moves:
-            moveScore = self.__recursiveUpdateScores(move,self.__depthChecking -1, alpha,beta, False)
+        for moveState in possible_moves:
+            moveScore = self.__recursiveUpdateScores(moveState,self.__depthChecking -1, alpha,beta, False)
             if moveScore>= maxScore:
                 maxScore = moveScore
-                maxScoringChild = move
+                maxScoringChild = moveState
             alpha = max (alpha, maxScore)
             if maxScoringChild ==None:
                 raise Exception("Bot could not find valid move.")          
         self.__parentNode = maxScoringChild
         self.__currentTurn = False
-        return self.__parentNode.board_state
+        return self.__parentNode
 
 
     def updateEvaluations(self) -> None:
