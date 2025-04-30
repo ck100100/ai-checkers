@@ -189,11 +189,14 @@ def train(model, device, episodes=1000, batch_size=32):
 
 
 class NNBot:
-    def __init__(self, model_path="checkers_final.pth", device=None):
+    def __init__(self, player, model_path="training_data/checkers_final.pth", device=None):
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.model = CheckersNet().to(self.device)
+        self.player = player
         
         script_dir = os.path.dirname(os.path.abspath(__file__))
+        print(f"Script directory: {script_dir}")
+        print(f"Model path: {model_path}")
         
         # Construct the full path to the model file
         full_model_path = os.path.join(script_dir, model_path)
@@ -210,7 +213,13 @@ class NNBot:
         self.model.eval()  # Set model to evaluation mode
 
     def getBotMove(self, boardNode):
-        current_player = boardNode.getBoardState().current_player
+
+        current_player = self.player
+        if boardNode == None:
+            firstBoardState = BoardState(None, None, current_player)
+            boardNode = BoardNode(firstBoardState, current_player)
+
+
         possible_moves = boardNode.findPossibleMoves(move_for=current_player)
         
         if not possible_moves:
@@ -228,6 +237,8 @@ class NNBot:
         with torch.no_grad():
             scores = self.model(move_batch)
             best_idx = torch.argmax(scores).item()
+        
+        print(f"Best move index: {best_idx}, Score: {scores[best_idx].item()}")
 
         return possible_moves[best_idx]
 

@@ -12,6 +12,7 @@ INF:int = sys.maxsize
 
 class BoardNode:
     def __init__(self, board_state:BoardState, botPieceType:Piece, parent=None):
+        self.turnNumber = 1
         self.board_state:BoardState = board_state
         self.parent = parent
         self.children = []
@@ -267,3 +268,6 @@ class BoardNode:
         red_material = sum(1 if not piece.is_king else 2 for piece in red_pieces)
         white_material = sum(1 if not piece.is_king else 2 for piece in white_pieces)
         return red_material - white_material
+    
+    def setTurnNumber(self, turnNumber:int) -> None:
+        self.turnNumber = turnNumber

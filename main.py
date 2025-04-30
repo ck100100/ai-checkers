@@ -11,6 +11,7 @@ from Bot.Pawn import Pawn
 from Bot.GameInterface import GameInterface
 from Bot.Bot import BotMinMaxAB
 from utils.types import Piece
+from Bot.NN import NNBot
 
 # looks like a Node class method. could be moved there
 def initialize_starting_positions():
@@ -44,19 +45,35 @@ def play_random_game(node, move_for=0):
 if __name__ == "__main__":
     # main()
     # GameInterface()
+
+    # minmax opponents
     bot1 = BotMinMaxAB(Piece.RED, 3)
     bot2 = BotMinMaxAB(Piece.WHITE, 3)
 
+    # nn opponents you can also set the nn's data path
+    # bot1 = NNBot(Piece.RED) 
+    # bot2 = NNBot(Piece.WHITE)
+
+    turn_counter = 1
+    turn_end=3000
     gameEnded:bool = False
     move = bot1.getBotMove(None)
     stateHistory = [move]
     while not gameEnded:
-
-        if move == None:
-            gameEnded = True
+        turn_counter += 1
         move = bot2.getBotMove(move)
-        stateHistory.append(move)
-        if move == None:
+        if move != None:
+            move.setTurnNumber(turn_counter)
+            stateHistory.append(move)
+        elif move == None or turn_counter > 3000:
             gameEnded = True
+
+        turn_counter += 1
         move = bot1.getBotMove(move)
-        stateHistory.append(move)
+        if move != None:
+            move.setTurnNumber(turn_counter)
+            stateHistory.append(move)
+        elif move == None or turn_counter > 3000:
+            gameEnded = True
+
+    replay_handler = ReplayHandler(stateHistory)
