@@ -87,6 +87,8 @@ class BotMinMaxAB(Bot):
         here we will have to execute the min-max algorithm and do
         alpha beta pruning in order to achieve this.
         """
+        self.__currentTurn = True if moveNode == None else False
+
         self.updateEvaluations()
         if moveNode != None:
             moveState = moveNode.board_state
